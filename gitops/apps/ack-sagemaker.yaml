@@ -1,0 +1,33 @@
+# ACK SageMaker controller — manage TrainingJob / Model / Endpoint as CRDs.
+# Auth via EKS Pod Identity (association in Terraform); the chart creates the
+# "ack-sagemaker-controller" ServiceAccount the association is bound to.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ack-sagemaker
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: public.ecr.aws/aws-controllers-k8s
+    chart: sagemaker-chart
+    targetRevision: 1.2.13
+    helm:
+      parameters:
+        - name: aws.region
+          value: us-east-1
+        - name: serviceAccount.create
+          value: "true"
+        - name: serviceAccount.name
+          value: ack-sagemaker-controller
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ack-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

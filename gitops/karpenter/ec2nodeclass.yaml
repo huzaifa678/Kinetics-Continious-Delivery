@@ -1,0 +1,24 @@
+# EC2NodeClass — the AWS-specific launch template Karpenter uses for nodes.
+# References the node IAM role created in Terraform and discovers subnets/SGs
+# by the karpenter.sh/discovery tag (set on them in the vpc/eks modules).
+#
+# Set `role` and the discovery tag values to match your deployment
+# (project-environment), e.g. kinetics-pipeline-dev.
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  # AL2023 via alias (alias implies the AMI family).
+  amiSelectorTerms:
+    - alias: al2023@latest
+  role: kinetics-pipeline-dev-karpenter-node
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: kinetics-pipeline-dev
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: kinetics-pipeline-dev
+  tags:
+    karpenter.sh/discovery: kinetics-pipeline-dev
+    Project: kinetics-pipeline

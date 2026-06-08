@@ -1,0 +1,27 @@
+# The training job itself, sourced from the in-repo Helm chart.
+# COST NOTE: ArgoCD keeps this synced, but the PyTorchJob only consumes GPUs
+# when HyperPod GPU nodes exist. Scale the HyperPod GPU group up to run, and
+# the auto-stop Lambda (or you) scales it back to 0 when done.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kinetics-training
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/huzaifa678/kinetics-pipeline.git
+    targetRevision: main
+    path: helm/training-job
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: training
+  syncPolicy:
+    # Manual sync by default so a git push doesn't silently launch a GPU run.
+    syncOptions:
+      - CreateNamespace=true
