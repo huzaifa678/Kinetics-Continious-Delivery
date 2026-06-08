@@ -12,7 +12,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/huzaifa678/kinetics-pipeline.git
+    repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
     targetRevision: main
     path: helm/training-job
     helm:
