@@ -1,0 +1,70 @@
+# Training image: build from docker/ (PyTorch + pytorchvideo + your code).
+image:
+  repository: <account>.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Distributed config. nprocPerNode should match GPUs per node.
+distributed:
+  workers: 1          # number of pods (nodes)
+  nprocPerNode: 4     # GPUs per node (e.g. g5.12xlarge = 4x A10G)
+
+# Run on the HyperPod GPU nodes only.
+nodeSelector:
+  node.kubernetes.io/instance-type: ml.g5.12xlarge
+
+tolerations:
+  - key: "sagemaker.amazonaws.com/node-health-status"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+resources:
+  limits:
+    nvidia.com/gpu: 4
+  requests:
+    cpu: "8"
+    memory: 48Gi
+
+# Hyperparameters for the CNN-LSTM (passed to train.py as flags/env).
+training:
+  model: cnn_lstm            # cnn_lstm | r2plus1d | videomae
+  backbone: resnet50
+  pretrained: true           # ImageNet/Kinetics transfer learning
+  freezeBackboneEpochs: 3    # warm up head before unfreezing
+  numClasses: 400            # Kinetics-400
+  clipLength: 16
+  batchSize: 16
+  epochs: 30
+  lr: 0.0003
+  mixedPrecision: bf16       # amp: cuts time + memory -> cuts cost
+  torchCompile: true
+
+# Spot-safe checkpointing: write to S3 frequently so an interruption costs
+# minutes, not hours. Training resumes from the latest checkpoint on restart.
+checkpoint:
+  s3Uri: s3://kinetics-pipeline-dev-checkpoints-<acct>/cnn-lstm/
+  everySteps: 200
+  resume: true               # auto-resume from latest on pod restart
+
+# Dataset via FSx for Lustre (fast parallel reads), backed by the S3 data bucket.
+data:
+  fsxClaimName: fsx-lustre-pvc
+  mountPath: /data
+  trainManifest: /data/kinetics400/train.csv
+  valManifest: /data/kinetics400/val.csv
+  # Set create: true and fill these from `terraform output` to provision the
+  # static FSx PV/PVC via this chart. Leave false if you manage the PVC elsewhere.
+  fsx:
+    create: false
+    fsxId: ""
+    mountName: ""
+    dnsName: ""
+    capacity: 1200Gi
+
+# HyperPod training operator run policy. The operator detects node/GPU faults
+# and auto-resumes the job (from the latest S3 checkpoint) up to
+# jobMaxRetryCount times — this is the HyperPod-native resilience, replacing
+# the Kubeflow restartPolicy/backoffLimit.
+runPolicy:
+  cleanPodPolicy: None
+  jobMaxRetryCount: 30

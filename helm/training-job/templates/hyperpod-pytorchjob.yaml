@@ -1,0 +1,73 @@
+apiVersion: sagemaker.amazonaws.com/v1
+kind: HyperPodPyTorchJob
+metadata:
+  name: {{ include "kinetics-training.fullname" . }}
+  labels:
+    {{- include "kinetics-training.labels" . | nindent 4 }}
+spec:
+  nprocPerNode: "{{ .Values.distributed.nprocPerNode }}"
+  replicaSpecs:
+    - name: pod
+      replicas: {{ .Values.distributed.workers }}
+      template:
+        metadata:
+          labels:
+            {{- include "kinetics-training.selectorLabels" . | nindent 12 }}
+        spec:
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: pytorch
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - torchrun
+                - --nproc_per_node={{ .Values.distributed.nprocPerNode }}
+                - /workspace/train.py
+              args:
+                - --model={{ .Values.training.model }}
+                - --backbone={{ .Values.training.backbone }}
+                - --pretrained={{ .Values.training.pretrained }}
+                - --freeze-backbone-epochs={{ .Values.training.freezeBackboneEpochs }}
+                - --num-classes={{ .Values.training.numClasses }}
+                - --clip-length={{ .Values.training.clipLength }}
+                - --batch-size={{ .Values.training.batchSize }}
+                - --epochs={{ .Values.training.epochs }}
+                - --lr={{ .Values.training.lr }}
+                - --amp={{ .Values.training.mixedPrecision }}
+                - --torch-compile={{ .Values.training.torchCompile }}
+                - --train-manifest={{ .Values.data.trainManifest }}
+                - --val-manifest={{ .Values.data.valManifest }}
+                - --checkpoint-s3={{ .Values.checkpoint.s3Uri }}
+                - --checkpoint-every-steps={{ .Values.checkpoint.everySteps }}
+                # Auto-resume relies on train.py reloading the latest checkpoint.
+                - --resume={{ .Values.checkpoint.resume }}
+              env:
+                - name: NCCL_DEBUG
+                  value: "INFO"
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: dataset
+                  mountPath: {{ .Values.data.mountPath }}
+                - name: dshm
+                  mountPath: /dev/shm
+          volumes:
+            - name: dataset
+              persistentVolumeClaim:
+                claimName: {{ .Values.data.fsxClaimName }}
+            - name: dshm
+              emptyDir:
+                medium: Memory
+                sizeLimit: 16Gi
+  runPolicy:
+    cleanPodPolicy: {{ .Values.runPolicy.cleanPodPolicy }}
+    # HyperPod auto-resume: max times the operator restarts the job after a
+    # detected fault before giving up.
+    jobMaxRetryCount: {{ .Values.runPolicy.jobMaxRetryCount }}

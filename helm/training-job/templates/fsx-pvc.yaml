@@ -1,0 +1,35 @@
+# Static PV/PVC binding the FSx for Lustre filesystem created in Terraform.
+# Fill fsxId / mountName / dnsName from `terraform output`.
+{{- if .Values.data.fsx.create }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.data.fsxClaimName }}-pv
+spec:
+  capacity:
+    storage: {{ .Values.data.fsx.capacity }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: fsx-sc
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: {{ .Values.data.fsx.fsxId }}
+    volumeAttributes:
+      dnsname: {{ .Values.data.fsx.dnsName }}
+      mountname: {{ .Values.data.fsx.mountName }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.data.fsxClaimName }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: fsx-sc
+  volumeName: {{ .Values.data.fsxClaimName }}-pv
+  resources:
+    requests:
+      storage: {{ .Values.data.fsx.capacity }}
+{{- end }}
