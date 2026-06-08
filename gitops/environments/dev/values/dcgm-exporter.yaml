@@ -1,0 +1,3 @@
+# No environment-specific values for dcgm-exporter on dev.
+# This file exists because the ApplicationSet references it via $values valueFiles.
+{}

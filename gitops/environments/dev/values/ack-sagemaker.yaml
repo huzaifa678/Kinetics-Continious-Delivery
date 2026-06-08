@@ -1,0 +1,6 @@
+# ACK SageMaker controller Helm values for the dev cluster.
+aws:
+  region: us-east-1
+serviceAccount:
+  create: true
+  name: ack-sagemaker-controller

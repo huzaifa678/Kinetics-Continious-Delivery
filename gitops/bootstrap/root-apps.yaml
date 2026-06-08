@@ -1,10 +1,12 @@
+# App-of-apps for the standalone Applications under gitops/apps/ (the in-repo
+# Karpenter config chart and the training workload). Together with
+# applicationset.yaml in this same folder, pointing a bootstrap Application at
+# gitops/bootstrap deploys the entire platform.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: karpenter-nodepools
+  name: platform-standalone-apps
   namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -12,20 +14,13 @@ spec:
   source:
     repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
     targetRevision: main
-    path: gitops/karpenter
+    path: gitops/apps
   destination:
     server: https://kubernetes.default.svc
-    namespace: karpenter
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    # Tolerate the CRDs not existing on the very first pass.
     syncOptions:
-      - SkipDryRunOnMissingResource=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 15s
-        maxDuration: 3m
-        factor: 2
+      - CreateNamespace=true

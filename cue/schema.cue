@@ -1,15 +1,5 @@
-// Strict schemas for every Kubernetes manifest this repo produces — the
-// rendered Helm chart (PyTorchJob, PV/PVC) and the GitOps manifests (ArgoCD
-// Applications, Karpenter NodePool / EC2NodeClass).
-//
-// `cue vet` against #Resource fails the build if a manifest has an unknown
-// field, a wrong-typed value, or a missing required key. See
-// scripts/validate-manifests.sh.
 package manifests
 
-// ---------------------------------------------------------------------------
-// Shared building blocks
-// ---------------------------------------------------------------------------
 #Name: string & =~"^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$"
 
 #ObjectMeta: {
@@ -20,18 +10,14 @@ package manifests
 	finalizers?: [...string]
 }
 
-// ---------------------------------------------------------------------------
-// SageMaker HyperPod training operator job (rendered by helm/training-job).
-// This is the HyperPod-native CRD (group sagemaker.amazonaws.com) — NOT the
-// Kubeflow PyTorchJob — so we get fault-detection + auto-resume.
-// ---------------------------------------------------------------------------
+
 #HyperPodPyTorchJob: {
 	apiVersion: "sagemaker.amazonaws.com/v1"
 	kind:       "HyperPodPyTorchJob"
 	metadata:   #ObjectMeta
 	spec: {
 		nprocPerNode?: string | int
-		replicaSpecs: [...#HyperPodReplicaSpec] & [_, ...] // at least one
+		replicaSpecs: [...#HyperPodReplicaSpec] & [_, ...] 
 		runPolicy?: {
 			cleanPodPolicy?:   "None" | "Running" | "All"
 			jobMaxRetryCount?: int & >=0
@@ -68,9 +54,7 @@ package manifests
 	volumeMounts?: [...{name: string, mountPath: string, ...}]
 }
 
-// ---------------------------------------------------------------------------
-// Core volumes (rendered when data.fsx.create = true)
-// ---------------------------------------------------------------------------
+
 #PersistentVolume: {
 	apiVersion: "v1"
 	kind:       "PersistentVolume"
@@ -97,9 +81,7 @@ package manifests
 	}
 }
 
-// ---------------------------------------------------------------------------
-// ArgoCD Application
-// ---------------------------------------------------------------------------
+
 #Application: {
 	apiVersion: "argoproj.io/v1alpha1"
 	kind:       "Application"
@@ -120,7 +102,6 @@ package manifests
 #AppSource: {
 	repoURL:        string
 	targetRevision: string
-	// Either a Helm chart (chart set) or a path in the repo (path set).
 	chart?: string
 	path?:  string
 	helm?: {
@@ -129,9 +110,20 @@ package manifests
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Karpenter
-// ---------------------------------------------------------------------------
+
+#ApplicationSet: {
+	apiVersion: "argoproj.io/v1alpha1"
+	kind:       "ApplicationSet"
+	metadata:   #ObjectMeta
+	spec: {
+		goTemplate?: bool
+		generators: [...{...}] & [_, ...]
+		template: {...}
+		...
+	}
+}
+
+
 #NodePool: {
 	apiVersion: "karpenter.sh/v1"
 	kind:       "NodePool"
@@ -169,13 +161,11 @@ package manifests
 	}
 }
 
-// ---------------------------------------------------------------------------
-// The disjunction every document is vetted against. Adding a manifest of an
-// unlisted kind will fail validation by design — keep this list authoritative.
-// ---------------------------------------------------------------------------
+
 #Resource: #HyperPodPyTorchJob |
 	#PersistentVolume |
 	#PersistentVolumeClaim |
 	#Application |
+	#ApplicationSet |
 	#NodePool |
 	#EC2NodeClass

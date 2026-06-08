@@ -1,0 +1,5 @@
+# Defaults for standalone render/validation; the ApplicationSet overrides
+# nodeRole / discoveryTag / project from environments/<env>/env.yaml at deploy time.
+nodeRole: kinetics-pipeline-dev-karpenter-node
+discoveryTag: kinetics-pipeline-dev
+project: kinetics-pipeline

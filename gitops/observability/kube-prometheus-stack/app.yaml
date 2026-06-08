@@ -1,0 +1,7 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Prometheus + Grafana. Env values: environments/dev/values/kube-prometheus-stack.yaml
+name: kube-prometheus-stack
+namespace: monitoring
+chartRepoURL: https://prometheus-community.github.io/helm-charts
+chartName: kube-prometheus-stack
+chartVersion: "65.1.1"

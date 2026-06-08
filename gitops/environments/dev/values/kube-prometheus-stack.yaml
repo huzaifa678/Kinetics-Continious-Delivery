@@ -1,0 +1,3 @@
+# kube-prometheus-stack Helm values for the dev cluster.
+grafana:
+  defaultDashboardsEnabled: true

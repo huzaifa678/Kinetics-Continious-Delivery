@@ -1,0 +1,7 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Karpenter controller — JIT node autoscaling. Env values: environments/dev/values/karpenter.yaml
+name: karpenter
+namespace: karpenter
+chartRepoURL: public.ecr.aws/karpenter
+chartName: karpenter
+chartVersion: "1.0.6"

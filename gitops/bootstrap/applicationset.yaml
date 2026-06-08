@@ -1,0 +1,55 @@
+# Single ApplicationSet that generates an Application for every upstream Helm
+# chart under gitops/infra/* and gitops/observability/*.
+#
+# De-hardcoding pattern (no control flow — every {{ }} is inside a quoted string,
+# which is the only form ArgoCD ApplicationSet templating supports):
+#   * The git generator reads each app's catalog file (chart coordinates only).
+#   * Each Application is multi-source: source[0] is the upstream chart; source[1]
+#     is THIS repo as a `$values` ref, so the chart's values come from
+#     gitops/environments/dev/values/<app>.yaml. All env-specific values
+#     (clusterName, region, queue, ...) live there — never in an app manifest.
+#
+# In-repo charts (Karpenter NodePool/EC2NodeClass) and the training workload are
+# standalone Applications under gitops/apps/ (different sync semantics).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kinetics-platform
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - git:
+        repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+        revision: main
+        files:
+          - path: gitops/infra/*/app.yaml
+          - path: gitops/observability/*/app.yaml
+  template:
+    metadata:
+      name: '{{ .name }}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ .namespace }}'
+      sources:
+        - repoURL: '{{ .chartRepoURL }}'
+          chart: '{{ .chartName }}'
+          targetRevision: '{{ .chartVersion }}'
+          helm:
+            valueFiles:
+              - '$values/gitops/environments/dev/values/{{ .name }}.yaml'
+        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+          targetRevision: main
+          ref: values
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

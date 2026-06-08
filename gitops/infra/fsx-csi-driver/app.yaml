@@ -1,0 +1,7 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# FSx for Lustre CSI driver. No env-specific values.
+name: fsx-csi-driver
+namespace: kube-system
+chartRepoURL: https://kubernetes-sigs.github.io/aws-fsx-csi-driver
+chartName: aws-fsx-csi-driver
+chartVersion: "1.9.0"

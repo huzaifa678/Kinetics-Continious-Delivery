@@ -1,10 +1,9 @@
-# NodePool — what Karpenter is allowed to provision for general/utility CPU
-# workloads (controllers, ArgoCD, Prometheus, dataset prep jobs). GPU training
-# nodes are NOT here — those are managed by the HyperPod cluster.
+# NodePool — what Karpenter may provision for general/utility CPU workloads
+# (controllers, ArgoCD, Prometheus, dataset prep). GPU training nodes are NOT
+# here — those are managed by the HyperPod cluster.
 #
-# COST CONTROL:
-#   - Spot first (falls back to on-demand) -> cheapest capacity.
-#   - Consolidation removes empty/underutilized nodes quickly -> scale-to-zero.
+# COST CONTROL: Spot first (falls back to on-demand); consolidation removes
+# empty/underutilized nodes quickly -> scale-to-zero.
 apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:
@@ -32,8 +31,7 @@ spec:
         - key: karpenter.k8s.aws/instance-generation
           operator: Gt
           values: ["4"]
-      # Recycle nodes regularly so they stay patched.
-      expireAfter: 720h
+      expireAfter: 720h # recycle nodes regularly so they stay patched
   limits:
     cpu: "100"
   disruption:

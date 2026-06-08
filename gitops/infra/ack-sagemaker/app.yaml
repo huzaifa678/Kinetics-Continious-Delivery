@@ -1,0 +1,7 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# ACK SageMaker controller. Env values: environments/dev/values/ack-sagemaker.yaml
+name: ack-sagemaker
+namespace: ack-system
+chartRepoURL: public.ecr.aws/aws-controllers-k8s
+chartName: sagemaker-chart
+chartVersion: "1.2.13"

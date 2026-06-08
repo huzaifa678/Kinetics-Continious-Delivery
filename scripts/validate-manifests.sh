@@ -39,9 +39,17 @@ helm template kinetics "$CHART" \
   > "$TMP/render-fsx.yaml"
 vet "$TMP/render-fsx.yaml"
 
-echo "==> Vetting GitOps manifests"
-for f in "$ROOT"/gitops/apps/*.yaml "$ROOT"/gitops/karpenter/*.yaml; do
+echo "==> Rendering in-repo Karpenter config chart"
+helm template karpenter-config "$ROOT/gitops/config/karpenter" > "$TMP/render-karpenter-config.yaml"
+vet "$TMP/render-karpenter-config.yaml"
+
+echo "==> Vetting bootstrap ApplicationSet + standalone Applications"
+for f in "$ROOT"/gitops/bootstrap/*.yaml "$ROOT"/gitops/apps/*.yaml; do
   vet "$f"
 done
+
+# NOTE: gitops/environments/**/env.yaml and gitops/<category>/<app>/app.yaml are
+# ApplicationSet *input data* (not Kubernetes manifests) and are intentionally
+# NOT vetted against #Resource.
 
 echo "All manifests valid."
