@@ -39,6 +39,20 @@ training:
   mixedPrecision: bf16       # amp: cuts time + memory -> cuts cost
   torchCompile: true
 
+# Experiment tracking (SageMaker-managed MLflow). Empty mlflowTrackingUri keeps
+# tracking disabled (the trainer no-ops). Set it to the tracking server ARN from
+# `terraform output mlflow_tracking_server_arn`.
+tracking:
+  mlflowTrackingUri: ""      # e.g. arn:aws:sagemaker:us-east-1:<acct>:mlflow-tracking-server/kinetics-pipeline-dev-mlflow
+  experimentName: kinetics-cnn-lstm
+
+# Observability. OpenTelemetry tracing is OFF unless otelExporterOtlpEndpoint is
+# set (the trainer falls back to a no-op tracer); structured logging is always on.
+observability:
+  otelExporterOtlpEndpoint: ""   # e.g. http://otel-collector.observability:4318
+  serviceName: kinetics-trainer
+  logLevel: INFO
+
 # Spot-safe checkpointing: write to S3 frequently so an interruption costs
 # minutes, not hours. Training resumes from the latest checkpoint on restart.
 checkpoint:

@@ -48,9 +48,19 @@ spec:
                 - --checkpoint-every-steps={{ .Values.checkpoint.everySteps }}
                 # Auto-resume relies on train.py reloading the latest checkpoint.
                 - --resume={{ .Values.checkpoint.resume }}
+                # Experiment tracking (no-op when the URI is empty).
+                - --mlflow-tracking-uri={{ .Values.tracking.mlflowTrackingUri }}
+                - --experiment-name={{ .Values.tracking.experimentName }}
               env:
                 - name: NCCL_DEBUG
                   value: "INFO"
+                # OpenTelemetry tracing — empty endpoint => no-op tracer.
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  value: "{{ .Values.observability.otelExporterOtlpEndpoint }}"
+                - name: OTEL_SERVICE_NAME
+                  value: "{{ .Values.observability.serviceName }}"
+                - name: LOG_LEVEL
+                  value: "{{ .Values.observability.logLevel }}"
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}
               volumeMounts:
