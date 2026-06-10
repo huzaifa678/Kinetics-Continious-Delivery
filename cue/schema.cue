@@ -133,6 +133,7 @@ package manifests
 			nodeClassRef: {group: string, kind: string, name: #Name}
 			requirements: [...#Requirement] & [_, ...]
 			expireAfter?: string
+			taints?: [...#Taint]
 		}
 		limits?: {[string]: string | int}
 		disruption?: {
@@ -140,6 +141,12 @@ package manifests
 			consolidateAfter?:    string
 		}
 	}
+}
+
+#Taint: {
+	key:    string
+	value?: string
+	effect: "NoSchedule" | "PreferNoSchedule" | "NoExecute"
 }
 
 #Requirement: {
@@ -161,6 +168,19 @@ package manifests
 	}
 }
 
+// HyperPod managed-Karpenter NodeClass. Maps to pre-created HyperPod instance
+// groups (count 0); Karpenter provisions GPU nodes from them on demand. The
+// instanceGroups names MUST match the Terraform-created groups
+// (terraform output hyperpod_gpu_instance_groups), max 10.
+#HyperpodNodeClass: {
+	apiVersion: "karpenter.sagemaker.amazonaws.com/v1"
+	kind:       "HyperpodNodeClass"
+	metadata:   #ObjectMeta
+	spec: {
+		instanceGroups: [...string] & [_, ...]
+	}
+}
+
 
 #Resource: #HyperPodPyTorchJob |
 	#PersistentVolume |
@@ -168,4 +188,5 @@ package manifests
 	#Application |
 	#ApplicationSet |
 	#NodePool |
-	#EC2NodeClass
+	#EC2NodeClass |
+	#HyperpodNodeClass
