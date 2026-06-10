@@ -1,0 +1,9 @@
+apiVersion: karpenter.sagemaker.amazonaws.com/v1
+kind: HyperpodNodeClass
+metadata:
+  name: {{ .Values.nodeClass.name }}
+spec:
+  instanceGroups:
+    {{- range .Values.nodeClass.instanceGroups }}
+    - {{ . }}
+    {{- end }}

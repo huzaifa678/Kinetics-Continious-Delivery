@@ -1,0 +1,18 @@
+
+nodeClass:
+  name: gpu
+  instanceGroups:
+    - gpu-training-az1
+    - gpu-training-az2
+
+nodePool:
+  name: gpu-training
+  expireAfter: Never
+  # Scale-to-zero: consolidate empty GPU nodes quickly once a run finishes saving costs.
+  consolidationPolicy: WhenEmptyOrUnderutilized
+  consolidateAfter: 1m
+  # apply taint for no overlap between CPU and GPU nodes, and to ensure Karpenter accounts for it during scheduling simulation.
+  taints:
+    - key: nvidia.com/gpu
+      value: "true"
+      effect: NoSchedule

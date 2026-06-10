@@ -1,0 +1,22 @@
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: {{ .Values.nodePool.name }}
+spec:
+  template:
+    spec:
+      nodeClassRef:
+        group: karpenter.sagemaker.amazonaws.com
+        kind: HyperpodNodeClass
+        name: {{ .Values.nodeClass.name }}
+      expireAfter: {{ .Values.nodePool.expireAfter }}
+      requirements:
+        - key: node.kubernetes.io/instance-type
+          operator: Exists
+      {{- with .Values.nodePool.taints }}
+      taints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  disruption:
+    consolidationPolicy: {{ .Values.nodePool.consolidationPolicy }}
+    consolidateAfter: {{ .Values.nodePool.consolidateAfter }}
