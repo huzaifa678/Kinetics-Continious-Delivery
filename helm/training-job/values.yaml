@@ -17,6 +17,12 @@ tolerations:
   - key: "sagemaker.amazonaws.com/node-health-status"
     operator: "Exists"
     effect: "NoSchedule"
+  # Matches the taint the HyperPod Karpenter NodePool puts on GPU nodes
+  # (gitops/config/hyperpod-karpenter values nodePool.taints). Lets this job land
+  # on GPU nodes while keeping CPU/system pods (which lack this toleration) off.
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
 
 resources:
   limits:
