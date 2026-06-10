@@ -1,0 +1,11 @@
+# Tempo receiver config for OpenTelemetry Collector. 
+# This is a separate file from the main opentelemetry-collector values to keep it organized and focused on Tempo-specific settings. 
+# The Tempo exporter in the collector config references this receiver, so they work together to send telemetry data to Tempo.
+tempo:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318

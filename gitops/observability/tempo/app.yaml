@@ -1,0 +1,9 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Grafana Tempo (single-binary) — traces backend. The collector exports OTLP
+# here; Grafana (kube-prometheus-stack) queries it as a datasource.
+# Env values: environments/dev/values/tempo.yaml
+name: tempo
+namespace: observability
+chartRepoURL: https://grafana.github.io/helm-charts
+chartName: tempo
+chartVersion: "1.24.4"

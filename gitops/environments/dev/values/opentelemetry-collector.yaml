@@ -1,0 +1,36 @@
+mode: deployment
+replicaCount: 1
+fullnameOverride: otel-collector
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+command:
+  name: otelcol-contrib
+
+# Expose the OTLP receiver ports on the Service (gRPC 4317 / HTTP 4318).
+ports:
+  otlp:
+    enabled: true
+  otlp-http:
+    enabled: true
+
+config:
+  exporters:
+    otlp/tempo:
+      endpoint: tempo.observability:4317
+      tls:
+        insecure: true
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [otlp/tempo]
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

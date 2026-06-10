@@ -1,3 +1,12 @@
 # kube-prometheus-stack Helm values for the dev cluster.
 grafana:
   defaultDashboardsEnabled: true
+  # Tempo datasource — lets Grafana query the spans the trainer emits
+  # via the OTel collector. Tempo runs in the `observability` namespace; its
+  # query API is on :3200. Cross-namespace DNS, so the URL is fully qualified.
+  additionalDataSources:
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      access: proxy
+      url: http://tempo.observability:3200

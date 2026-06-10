@@ -1,0 +1,9 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# OpenTelemetry Collector — OTLP trace gateway for the trainer/inference spans.
+# Receives OTLP (4317 grpc / 4318 http) and forwards traces to Tempo.
+# Env values: environments/dev/values/opentelemetry-collector.yaml
+name: opentelemetry-collector
+namespace: observability
+chartRepoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+chartName: opentelemetry-collector
+chartVersion: "0.158.1"
