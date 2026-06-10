@@ -43,6 +43,10 @@ echo "==> Rendering in-repo Karpenter config chart"
 helm template karpenter-config "$ROOT/gitops/config/karpenter" > "$TMP/render-karpenter-config.yaml"
 vet "$TMP/render-karpenter-config.yaml"
 
+echo "==> Rendering in-repo HyperPod Karpenter config chart"
+helm template hyperpod-karpenter "$ROOT/gitops/config/hyperpod-karpenter" > "$TMP/render-hyperpod-karpenter.yaml"
+vet "$TMP/render-hyperpod-karpenter.yaml"
+
 echo "==> Vetting bootstrap ApplicationSet + standalone Applications"
 for f in "$ROOT"/gitops/bootstrap/*.yaml "$ROOT"/gitops/apps/*.yaml; do
   vet "$f"
