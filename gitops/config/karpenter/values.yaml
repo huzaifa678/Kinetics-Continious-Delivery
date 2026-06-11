@@ -1,5 +1,5 @@
 # Defaults for standalone render/validation; the ApplicationSet overrides
 # nodeRole / discoveryTag / project from environments/<env>/env.yaml at deploy time.
-nodeRole: kinetics-pipeline-dev-karpenter-node
-discoveryTag: kinetics-pipeline-dev
+nodeRole: kinetics-pipeline-test-karpenter-node   # TEMP: test cluster (revert to -dev)
+discoveryTag: kinetics-pipeline-test              # TEMP: revert to -dev
 project: kinetics-pipeline
