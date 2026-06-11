@@ -33,7 +33,7 @@ resources:
 
 # Hyperparameters for the CNN-LSTM (passed to train.py as flags/env).
 training:
-  model: cnn_lstm            # cnn_lstm | r2plus1d | videomae
+  model: cnn_lstm            # cnn_lstm (primary) | r2plus1d (3D-CNN baseline)
   backbone: resnet50
   pretrained: true           # ImageNet/Kinetics transfer learning
   freezeBackboneEpochs: 3    # warm up head before unfreezing
@@ -49,7 +49,7 @@ training:
 # tracking disabled (the trainer no-ops). Set it to the tracking server ARN from
 # `terraform output mlflow_tracking_server_arn`.
 tracking:
-  mlflowTrackingUri: ""      # e.g. arn:aws:sagemaker:us-east-1:<acct>:mlflow-tracking-server/kinetics-pipeline-dev-mlflow
+  mlflowTrackingUri: "arn:aws:sagemaker:us-east-1:533267178572:mlflow-tracking-server/kinetics-pipeline-dev-mlflow"  # empty "" to disable
   experimentName: kinetics-cnn-lstm
 
 # Observability. OpenTelemetry tracing is OFF unless otelExporterOtlpEndpoint is
@@ -62,7 +62,7 @@ observability:
 # Spot-safe checkpointing: write to S3 frequently so an interruption costs
 # minutes, not hours. Training resumes from the latest checkpoint on restart.
 checkpoint:
-  s3Uri: s3://kinetics-pipeline-dev-checkpoints-<acct>/cnn-lstm/
+  s3Uri: s3://kinetics-pipeline-dev-checkpoints-533267178572/cnn-lstm/
   everySteps: 200
   resume: true               # auto-resume from latest on pod restart
 
