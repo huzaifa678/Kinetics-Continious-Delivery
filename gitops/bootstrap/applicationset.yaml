@@ -47,9 +47,9 @@ spec:
           targetRevision: main
           ref: values
       syncPolicy:
-        # TEMP: manual sync — apps are created but NOT auto-deployed; sync each
-        # with `argocd app sync`. Restore the automated block to re-enable GitOps:
-        #   automated: {prune: true, selfHeal: true}
+        automated:
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true

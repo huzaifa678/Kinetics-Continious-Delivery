@@ -21,7 +21,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: karpenter
   syncPolicy:
-    # TEMP: manual sync (restore `automated: {prune, selfHeal}` to re-enable)
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - SkipDryRunOnMissingResource=true
     retry:

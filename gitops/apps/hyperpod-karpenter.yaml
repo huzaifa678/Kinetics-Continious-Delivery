@@ -17,7 +17,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: kube-system
   syncPolicy:
-    # TEMP: manual sync (restore `automated: {prune, selfHeal}` to re-enable)
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - SkipDryRunOnMissingResource=true
     retry:
