@@ -1,0 +1,5 @@
+# cert-manager Helm values. installCRDs via crds.enabled so the CRDs land with
+# the chart (the HyperPod operator needs cert-manager's webhook + CRDs present).
+crds:
+  enabled: true
+  keep: true

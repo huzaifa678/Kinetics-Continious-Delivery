@@ -1,0 +1,9 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# cert-manager — required by the SageMaker HyperPod training operator EKS add-on.
+# Terraform (module.addons) waits for this to be Available before creating the
+# operator add-on. Env values: environments/dev/values/cert-manager.yaml
+name: cert-manager
+namespace: cert-manager
+chartRepoURL: https://charts.jetstack.io
+chartName: cert-manager
+chartVersion: "v1.20.2"
