@@ -1,0 +1,55 @@
+image:
+  repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+  tag: serve-latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+# Model artifact: an initContainer pulls it from S3 into a shared emptyDir, so the
+# app starts with MODEL_DIR populated. Point this at a directory holding
+# model.pth + model_config.json + label_map.json.
+model:
+  s3Uri: s3://kinetics-pipeline-dev-checkpoints-533267178572/cnn-lstm/model/
+  mountPath: /opt/ml/model
+  awscliImage: amazon/aws-cli:2.17.0
+
+service:
+  type: ClusterIP
+  port: 8080
+
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics
+    labels:
+      release: kube-prometheus-stack
+
+# Optional OTLP tracing. Points at the in-cluster collector by default; the app
+# no-ops if this is empty (see kinetics_trainer.observability).
+observability:
+  otelExporterOtlpEndpoint: "http://otel-collector.observability:4318"
+  serviceName: kinetics-inference
+  logLevel: INFO
+
+resources:
+  requests:
+    cpu: "1"
+    memory: 2Gi
+  limits:
+    cpu: "2"
+    memory: 4Gi
+
+# IRSA: bind a role that can read the model S3 prefix. Fill the role-arn after
+# `terraform output`. CPU inference -> runs on the existing system/EKS nodes.
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::533267178572:role/kinetics-inference-s3-read
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
