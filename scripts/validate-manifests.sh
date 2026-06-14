@@ -47,6 +47,12 @@ echo "==> Rendering in-repo HyperPod Karpenter config chart"
 helm template hyperpod-karpenter "$ROOT/gitops/config/hyperpod-karpenter" > "$TMP/render-hyperpod-karpenter.yaml"
 vet "$TMP/render-hyperpod-karpenter.yaml"
 
+# The inference-service chart emits only standard k8s kinds (Deployment, Service,
+# ServiceAccount, ServiceMonitor) — covered by `helm lint`, not the CUE CRD schema
+# (#Resource is a closed union of this repo's CRD manifests). Lint it for syntax.
+echo "==> Linting in-repo inference-service chart"
+helm lint "$ROOT/helm/inference-service"
+
 echo "==> Vetting bootstrap ApplicationSet + standalone Applications"
 for f in "$ROOT"/gitops/bootstrap/*.yaml "$ROOT"/gitops/apps/*.yaml; do
   vet "$f"
