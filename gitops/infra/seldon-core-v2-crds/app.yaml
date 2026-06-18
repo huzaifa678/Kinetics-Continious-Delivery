@@ -1,0 +1,10 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Seldon Core v2 CRDs (Model, Experiment, Server, Pipeline, SeldonRuntime, ...).
+# Wave 0 of the Seldon install: must reconcile before setup/runtime/servers. The
+# ApplicationSet's SkipDryRunOnMissingResource lets the later apps converge via
+# self-heal until these CRDs exist. Env values: environments/dev/values/seldon-core-v2-crds.yaml
+name: seldon-core-v2-crds
+namespace: seldon-mesh
+chartRepoURL: https://seldonio.github.io/helm-charts/
+chartName: seldon-core-v2-crds
+chartVersion: "2.10.2"
