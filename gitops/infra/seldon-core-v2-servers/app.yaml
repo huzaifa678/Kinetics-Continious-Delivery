@@ -1,0 +1,11 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Seldon Core v2 stock servers. Keeps one MLServer (handy for smoke tests) and
+# drops Triton (unused, saves a StatefulSet). The CNN-LSTM runs on a CUSTOM
+# MLServer Server (built from kinetics_trainer.serving) added in a later phase,
+# not on these stock servers. Needs the runtime first.
+# Env values: environments/dev/values/seldon-core-v2-servers.yaml
+name: seldon-core-v2-servers
+namespace: seldon-mesh
+chartRepoURL: https://seldonio.github.io/helm-charts/
+chartName: seldon-core-v2-servers
+chartVersion: "2.10.2"

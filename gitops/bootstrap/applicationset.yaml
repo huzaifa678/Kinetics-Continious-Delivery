@@ -53,3 +53,8 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          # Multi-chart bundles (e.g. Seldon Core v2: crds -> setup -> runtime ->
+          # servers) install out of order under independent auto-sync; this lets
+          # the dependent apps apply + self-heal instead of erroring on the not-
+          # yet-created CRDs. Harmless for single-chart apps.
+          - SkipDryRunOnMissingResource=true

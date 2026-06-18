@@ -1,0 +1,11 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Seldon Core v2 runtime (SeldonRuntime CR -> scheduler, envoy, hodometer). The
+# Kafka-dependent data-plane components (dataflow/pipelinegateway/modelgateway)
+# are disabled in the env values — we run sync Models + A/B Experiments only, no
+# Pipelines, so no Kafka. Needs setup (SeldonConfig "default") first.
+# Env values: environments/dev/values/seldon-core-v2-runtime.yaml
+name: seldon-core-v2-runtime
+namespace: seldon-mesh
+chartRepoURL: https://seldonio.github.io/helm-charts/
+chartName: seldon-core-v2-runtime
+chartVersion: "2.10.2"
