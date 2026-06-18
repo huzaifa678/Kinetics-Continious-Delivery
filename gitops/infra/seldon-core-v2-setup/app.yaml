@@ -1,0 +1,10 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Seldon Core v2 operator/manager + default SeldonConfig/ServerConfig. Manages
+# Seldon resources in the seldon-mesh namespace (namespace-scoped controller —
+# our Models/Experiments live in seldon-mesh). Needs the CRDs first.
+# Env values: environments/dev/values/seldon-core-v2-setup.yaml
+name: seldon-core-v2-setup
+namespace: seldon-mesh
+chartRepoURL: https://seldonio.github.io/helm-charts/
+chartName: seldon-core-v2-setup
+chartVersion: "2.10.2"
