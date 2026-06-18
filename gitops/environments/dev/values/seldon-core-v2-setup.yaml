@@ -1,0 +1,5 @@
+# Seldon Core v2 setup (operator + default SeldonConfig/ServerConfig).
+# Dev defaults: namespace-scoped controller (manages seldon-mesh), control plane
+# PLAINTEXT (no mTLS / cert-manager needed for dev). Override here when hardening
+# for prod (security.* -> SSL, controller clusterwide, etc.).
+{}
