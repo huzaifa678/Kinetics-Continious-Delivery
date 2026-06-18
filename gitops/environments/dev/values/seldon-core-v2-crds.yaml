@@ -1,0 +1,4 @@
+# Seldon Core v2 CRDs — chart defaults are fine (installs all v2 CRDs).
+# This file exists because the ApplicationSet always points each app at
+# environments/dev/values/<name>.yaml.
+{}
