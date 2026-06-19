@@ -1,0 +1,34 @@
+# Seldon A/B for the CNN-LSTM action recognizer.
+#
+# storageUri values are resolved from the MLflow Model Registry by
+# training/deploy/resolve_seldon_uri.py and bumped here per release (CI yq).
+
+namespace: seldon-mesh
+
+# Custom MLServer server running the KineticsRuntime (built from Dockerfile.seldon).
+server:
+  name: kinetics-mlserver
+  # Set by CI to the pushed custom MLServer image (serve-<sha> built from Dockerfile.seldon).
+  image: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training:seldon-latest
+  serverConfig: mlserver
+  capability: kinetics
+  replicas: 1
+  # The runtime class MLServer loads for models on this server (default for models
+  # whose artifact ships no model-settings.json).
+  implementation: kinetics_trainer.serving.seldon_runtime.KineticsRuntime
+
+# Model versions. champion = current prod (A), challenger = candidate (B).
+models:
+  champion:
+    name: kinetics-champion
+    storageUri: s3://kinetics-pipeline-dev-mlflow-artifacts-533267178572/models/champion/model
+  challenger:
+    name: kinetics-challenger
+    storageUri: s3://kinetics-pipeline-dev-mlflow-artifacts-533267178572/models/challenger/model
+
+# A/B traffic split. The Experiment's name is what the edge calls (SELDON_MODEL).
+experiment:
+  name: kinetics-cnn-lstm
+  championWeight: 50
+  challengerWeight: 50
+  # we can set Challenger weight to 0 to do a "shadow test" where all traffic goes to Champion but we still get metrics on the Challenger.

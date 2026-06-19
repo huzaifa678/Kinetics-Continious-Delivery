@@ -1,0 +1,26 @@
+{{- if .Values.rollout.analysis.enabled }}
+# Promotion gate for the blue/green Rollout: query Prometheus (kube-prometheus-stack)
+# for the edge's own error rate. If the green stack's 5xx ratio stays under the
+# threshold across the samples, promotion proceeds; otherwise Rollouts aborts and
+# keeps the active (blue) version. Metric source: kinetics_trainer.serving.metrics.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "kinetics-inference.fullname" . }}-health
+  labels:
+    {{- include "kinetics-inference.labels" . | nindent 4 }}
+spec:
+  metrics:
+    - name: error-rate
+      interval: {{ .Values.rollout.analysis.interval }}
+      count: {{ .Values.rollout.analysis.count }}
+      failureLimit: {{ .Values.rollout.analysis.failureLimit }}
+      successCondition: result < {{ .Values.rollout.analysis.maxErrorRate }}
+      provider:
+        prometheus:
+          address: {{ .Values.rollout.analysis.prometheusAddress | quote }}
+          query: >-
+            sum(rate(inference_requests_total{status="error"}[2m]))
+            /
+            clamp_min(sum(rate(inference_requests_total[2m])), 1)
+{{- end }}

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: seldon-experiment
+description: >-
+  CNN-LSTM model serving on Seldon Core v2: a custom MLServer Server (the
+  kinetics_trainer.serving.seldon_runtime image), two model versions
+  (champion/challenger), and an A/B Experiment splitting traffic between them.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

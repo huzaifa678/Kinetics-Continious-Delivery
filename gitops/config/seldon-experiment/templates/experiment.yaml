@@ -1,0 +1,13 @@
+# A/B experiment: weighted split between champion and challenger. 
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Experiment
+metadata:
+  name: {{ .Values.experiment.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  default: {{ .Values.models.champion.name }}
+  candidates:
+    - name: {{ .Values.models.champion.name }}
+      weight: {{ .Values.experiment.championWeight }}
+    - name: {{ .Values.models.challenger.name }}
+      weight: {{ .Values.experiment.challengerWeight }}

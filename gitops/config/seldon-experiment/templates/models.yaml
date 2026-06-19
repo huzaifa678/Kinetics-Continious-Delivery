@@ -1,0 +1,21 @@
+# The two model versions under A/B. Each pulls its artifact from S3 and requires the `kinetics` capability so it lands on
+# the custom server above.
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: {{ .Values.models.champion.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  storageUri: {{ .Values.models.champion.storageUri | quote }}
+  requirements:
+    - {{ .Values.server.capability }}
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: {{ .Values.models.challenger.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  storageUri: {{ .Values.models.challenger.storageUri | quote }}
+  requirements:
+    - {{ .Values.server.capability }}

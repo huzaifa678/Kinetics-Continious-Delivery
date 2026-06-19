@@ -1,0 +1,30 @@
+# Seldon A/B serving (custom Server + champion/challenger Models + Experiment),
+# from the in-repo seldon-experiment chart. Standalone (not the ApplicationSet)
+# because its Model storageUris + Experiment weights are bumped per release, like
+# the training/inference charts. Auto-sync: these are lightweight CRs (CPU); the
+# heavy model servers scale with Seldon, and a weight bump is a cheap reconcile.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kinetics-experiment
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+    targetRevision: main
+    path: gitops/config/seldon-experiment
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: seldon-mesh
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Models/Experiment/Server CRDs are installed by the seldon-core-v2 apps;
+      # tolerate them being created out-of-order on first sync.
+      - SkipDryRunOnMissingResource=true

@@ -182,6 +182,45 @@ package manifests
 }
 
 
+// Seldon Core v2 custom model server. podSpec swaps in our custom MLServer image
+// (Dockerfile.seldon) and extraCapabilities advertises what its Models require.
+#SeldonServer: {
+	apiVersion: "mlops.seldon.io/v1alpha1"
+	kind:       "Server"
+	metadata:   #ObjectMeta
+	spec: {
+		serverConfig: string
+		replicas?:    int & >=0
+		extraCapabilities?: [...string]
+		podSpec?: {...}
+	}
+}
+
+// Seldon Core v2 model version. storageUri (resolved from the MLflow registry)
+// points at the artifact dir; requirements pick the server by capability.
+#SeldonModel: {
+	apiVersion: "mlops.seldon.io/v1alpha1"
+	kind:       "Model"
+	metadata:   #ObjectMeta
+	spec: {
+		storageUri: string
+		requirements?: [...string]
+		memory?: string
+	}
+}
+
+// Seldon Core v2 A/B experiment: weighted split across candidate models.
+#SeldonExperiment: {
+	apiVersion: "mlops.seldon.io/v1alpha1"
+	kind:       "Experiment"
+	metadata:   #ObjectMeta
+	spec: {
+		default: string
+		candidates: [...{name: string, weight: int & >=0}] & [_, ...]
+		mirror?: {name: string, percent: int & >=0 & <=100}
+	}
+}
+
 #Resource: #HyperPodPyTorchJob |
 	#PersistentVolume |
 	#PersistentVolumeClaim |
@@ -189,4 +228,7 @@ package manifests
 	#ApplicationSet |
 	#NodePool |
 	#EC2NodeClass |
-	#HyperpodNodeClass
+	#HyperpodNodeClass |
+	#SeldonServer |
+	#SeldonModel |
+	#SeldonExperiment
