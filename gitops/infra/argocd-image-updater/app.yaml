@@ -1,0 +1,12 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# ArgoCD Image Updater — OPTIONAL, capability-only. Installs the controller but
+# does NOT take over any image bumps: the CI push pipeline (docker-build.yml ->
+# update-gitops.yml) stays the active writer. To let Image Updater own an image,
+# opt in per-app via annotations (see README.md) AND disable that app's CI bump
+# (one image-tag field can have only one writer). Env values:
+# environments/dev/values/argocd-image-updater.yaml
+name: argocd-image-updater
+namespace: argocd
+chartRepoURL: https://argoproj.github.io/argo-helm
+chartName: argocd-image-updater
+chartVersion: "1.2.2"
