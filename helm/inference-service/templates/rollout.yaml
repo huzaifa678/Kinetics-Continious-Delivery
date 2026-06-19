@@ -1,0 +1,105 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "kinetics-inference.fullname" . }}
+  labels:
+    {{- include "kinetics-inference.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kinetics-inference.selectorLabels" . | nindent 6 }}
+  strategy:
+    blueGreen:
+      activeService: {{ include "kinetics-inference.fullname" . }}
+      previewService: {{ include "kinetics-inference.fullname" . }}-preview
+      autoPromotionEnabled: {{ .Values.rollout.autoPromotionEnabled }}
+      {{- if .Values.rollout.analysis.enabled }}
+      # Gate promotion on a Prometheus health check of the preview stack.
+      prePromotionAnalysis:
+        templates:
+          - templateName: {{ include "kinetics-inference.fullname" . }}-health
+      {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "kinetics-inference.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "kinetics-inference.serviceAccountName" . }}
+      {{- if not .Values.seldon.enabled }}
+      volumes:
+        - name: model
+          emptyDir: {}
+      initContainers:
+        # Local mode only: pull the model artifact from S3 before the app starts.
+        # In Seldon-edge mode the model lives in Seldon, so this is skipped.
+        - name: fetch-model
+          image: {{ .Values.model.awscliImage }}
+          command:
+            - sh
+            - -c
+            - aws s3 cp {{ .Values.model.s3Uri }} {{ .Values.model.mountPath }}/ --recursive
+          volumeMounts:
+            - name: model
+              mountPath: {{ .Values.model.mountPath }}
+      {{- end }}
+      containers:
+        - name: inference
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.service.port | quote }}
+            {{- if .Values.seldon.enabled }}
+            # Edge mode: delegate the forward-pass to the Seldon model/experiment.
+            - name: SELDON_ENDPOINT
+              value: {{ .Values.seldon.endpoint | quote }}
+            - name: SELDON_MODEL
+              value: {{ .Values.seldon.model | quote }}
+            - name: SELDON_TIMEOUT_SECONDS
+              value: {{ .Values.seldon.timeoutSeconds | quote }}
+            {{- else }}
+            - name: MODEL_DIR
+              value: {{ .Values.model.mountPath | quote }}
+            {{- end }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.observability.otelExporterOtlpEndpoint | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ .Values.observability.serviceName | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.observability.logLevel | quote }}
+          {{- if not .Values.seldon.enabled }}
+          volumeMounts:
+            - name: model
+              mountPath: {{ .Values.model.mountPath }}
+              readOnly: true
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
