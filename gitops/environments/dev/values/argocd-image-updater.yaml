@@ -1,0 +1,24 @@
+config:
+  logLevel: info
+  registries:
+    - name: ECR
+      api_url: https://533267178572.dkr.ecr.us-east-1.amazonaws.com
+      prefix: 533267178572.dkr.ecr.us-east-1.amazonaws.com
+      ping: yes
+      credentials: ext:/scripts/ecr-login.sh
+      credsexpire: 10h
+
+# Pod Identity binds AWS creds to this SA (see Terraform). No IRSA annotation.
+serviceAccount:
+  create: true
+  name: argocd-image-updater
+
+# ext credential script (needs the AWS CLI in the runtime — see README verify note).
+authScripts:
+  enabled: true
+  scripts:
+    ecr-login.sh: |
+      #!/bin/sh
+      aws ecr --region us-east-1 get-authorization-token \
+        --output text --query 'authorizationData[].authorizationToken' \
+        | base64 -d
