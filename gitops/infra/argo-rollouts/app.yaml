@@ -1,0 +1,10 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Argo Rollouts — progressive delivery (blue/green + analysis) for the inference
+# EDGE. Self-contained chart (CRDs + controller in one release), so no cross-app
+# ordering needed. The inference-service chart emits a Rollout + AnalysisTemplate
+# that this controller reconciles. Env values: environments/dev/values/argo-rollouts.yaml
+name: argo-rollouts
+namespace: argo-rollouts
+chartRepoURL: https://argoproj.github.io/argo-helm
+chartName: argo-rollouts
+chartVersion: "2.41.0"
