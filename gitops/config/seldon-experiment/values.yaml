@@ -5,11 +5,16 @@
 
 namespace: seldon-mesh
 
-# Custom MLServer server running the KineticsRuntime (built from Dockerfile.seldon).
+# Custom MLServer runtime image (Dockerfile.seldon, tag seldon-<sha>). Bumped by
+# CI (docker-build.yml -> update-gitops.yml) — same .image.{repository,tag}
+# convention as the training and inference charts.
+image:
+  repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+  tag: seldon-latest
+
+# Custom MLServer server running the KineticsRuntime (uses .image above).
 server:
   name: kinetics-mlserver
-  # Set by CI to the pushed custom MLServer image (serve-<sha> built from Dockerfile.seldon).
-  image: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training:seldon-latest
   serverConfig: mlserver
   capability: kinetics
   replicas: 1
