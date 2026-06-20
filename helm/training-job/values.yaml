@@ -5,9 +5,13 @@ image:
   pullPolicy: IfNotPresent
 
 # Distributed config. nprocPerNode should match GPUs per node.
+# Centralized distributed setup: set these two numbers and everything derives —
+# replicas (= nodes), spec.nprocPerNode, torchrun --nproc_per_node, and the GPU
+# resource limit. WORLD_SIZE = nodes * gpusPerNode (e.g. 2 nodes x 4 = 8 ranks).
+# Scale out by bumping `nodes` to 2 / 3 (each is one g5.12xlarge).
 distributed:
-  workers: 1          # number of pods (nodes)
-  nprocPerNode: 4     # GPUs per node (e.g. g5.12xlarge = 4x A10G)
+  nodes: 1            # number of GPU nodes (g5.12xlarge)
+  gpusPerNode: 4      # GPUs per node (g5.12xlarge = 4x A10G)
 
 # Run on the HyperPod GPU nodes only.
 nodeSelector:
@@ -24,9 +28,9 @@ tolerations:
     operator: "Exists"
     effect: "NoSchedule"
 
+# GPU limit is derived from distributed.gpusPerNode (see the template) so it can't
+# drift; set CPU/memory requests here.
 resources:
-  limits:
-    nvidia.com/gpu: 4
   requests:
     cpu: "8"
     memory: 48Gi

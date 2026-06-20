@@ -5,10 +5,10 @@ metadata:
   labels:
     {{- include "kinetics-training.labels" . | nindent 4 }}
 spec:
-  nprocPerNode: "{{ .Values.distributed.nprocPerNode }}"
+  nprocPerNode: "{{ .Values.distributed.gpusPerNode }}"
   replicaSpecs:
     - name: pod
-      replicas: {{ .Values.distributed.workers }}
+      replicas: {{ .Values.distributed.nodes }}
       template:
         metadata:
           labels:
@@ -28,7 +28,13 @@ spec:
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               command:
                 - torchrun
-                - --nproc_per_node={{ .Values.distributed.nprocPerNode }}
+                - --nnodes={{ .Values.distributed.nodes }}
+                - --nproc_per_node={{ .Values.distributed.gpusPerNode }}
+                # Cross-node rendezvous (MASTER_ADDR / node rank) is injected by the
+                # HyperPod training operator from replicaSpecs + spec.nprocPerNode.
+                # Verify on the first multi-node run: WORLD_SIZE == nodes * gpusPerNode
+                # inside the pods. If it's not, uncomment explicit rendezvous flags
+                # (--node-rank/--rdzv-endpoint) wired to the operator's injected env.
                 - /workspace/train.py
               args:
                 - --model={{ .Values.training.model }}
@@ -72,7 +78,11 @@ spec:
                 - name: LOG_LEVEL
                   value: "{{ .Values.observability.logLevel }}"
               resources:
-                {{- toYaml .Values.resources | nindent 16 }}
+                limits:
+                  # Derived from the centralized GPU/node count — one knob, no drift.
+                  nvidia.com/gpu: {{ .Values.distributed.gpusPerNode }}
+                requests:
+                  {{- toYaml .Values.resources.requests | nindent 18 }}
               volumeMounts:
                 - name: dataset
                   mountPath: {{ .Values.data.mountPath }}
