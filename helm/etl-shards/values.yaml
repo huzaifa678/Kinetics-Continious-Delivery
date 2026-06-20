@@ -1,0 +1,41 @@
+image:
+  repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+  tag: sha-latest         
+  pullPolicy: IfNotPresent
+
+
+numShards: 64
+parallelism: 8
+backoffLimit: 2
+
+# Input manifest (on the FSx /data mount) + decode params.
+manifest: /data/kinetics400/train.csv
+clipLength: 16
+resize: 256
+
+# Output WebDataset shards. S3 so training can stream them (FSx can also import).
+outputS3: s3://kinetics-pipeline-dev-data-533267178572/kinetics400/shards/train
+
+# Dataset input via the same FSx-for-Lustre PVC the training job uses.
+data:
+  fsxClaimName: fsx-lustre-pvc
+  mountPath: /data
+
+# CPU-only decode — keep it OFF the GPU nodes (no GPU toleration).
+resources:
+  requests:
+    cpu: "4"
+    memory: 8Gi
+  limits:
+    cpu: "8"
+    memory: 16Gi
+
+nodeSelector: {}
+tolerations: []
+
+# IRSA/Pod-Identity SA that can WRITE the output S3 prefix. Fill after terraform.
+serviceAccount:
+  create: true
+  name: etl-shards
+  annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::533267178572:role/kinetics-etl-shards
