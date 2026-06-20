@@ -46,6 +46,9 @@ training:
   batchSize: 16
   epochs: 30
   lr: 0.0003
+  # Scale LR for the global (multi-node) batch: none | linear | sqrt. Default none
+  # (single-node safe). For multi-node (distributed.nodes > 1) use "sqrt" with AdamW.
+  lrScaling: none
   mixedPrecision: bf16       # amp: cuts time + memory -> cuts cost
   torchCompile: true
 

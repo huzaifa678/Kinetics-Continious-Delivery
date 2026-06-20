@@ -46,6 +46,7 @@ spec:
                 - --batch-size={{ .Values.training.batchSize }}
                 - --epochs={{ .Values.training.epochs }}
                 - --lr={{ .Values.training.lr }}
+                - --lr-scaling={{ .Values.training.lrScaling | default "none" }}
                 - --amp={{ .Values.training.mixedPrecision }}
                 - --torch-compile={{ .Values.training.torchCompile }}
                 - --train-manifest={{ .Values.data.trainManifest }}
