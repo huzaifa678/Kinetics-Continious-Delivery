@@ -72,6 +72,12 @@ data:
   mountPath: /data
   trainManifest: /data/kinetics400/train.csv
   valManifest: /data/kinetics400/val.csv
+  # Data source. "manifest" (default) decodes mp4s each epoch. "shards" streams
+  # pre-decoded WebDataset shards built by the etl-shards Job (no per-epoch decode).
+  format: manifest
+  trainShards: ""   # e.g. "pipe:aws s3 cp s3://.../shards/train/clips-{00000..00063}.tar -"
+  valShards: ""
+  shardEpochSize: 0  # total train samples/epoch (DDP-safe resample); 0 = single pass
   # Set create: true and fill these from `terraform output` to provision the
   # static FSx PV/PVC via this chart. Leave false if you manage the PVC elsewhere.
   fsx:
