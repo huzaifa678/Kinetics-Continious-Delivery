@@ -44,6 +44,16 @@ spec:
                 - --torch-compile={{ .Values.training.torchCompile }}
                 - --train-manifest={{ .Values.data.trainManifest }}
                 - --val-manifest={{ .Values.data.valManifest }}
+                # Data source: "manifest" decodes mp4s per epoch; "shards" streams
+                # pre-decoded WebDataset shards (kinetics_trainer.etl). train-manifest
+                # still supplies the label map in either mode.
+                - --data-format={{ .Values.data.format | default "manifest" }}
+                {{- if eq (.Values.data.format | default "manifest") "shards" }}
+                - --train-shards={{ .Values.data.trainShards }}
+                - --val-shards={{ .Values.data.valShards }}
+                # DDP-safe epoch length (resampled + with_epoch); /world_size per rank.
+                - --shard-epoch-size={{ .Values.data.shardEpochSize }}
+                {{- end }}
                 - --checkpoint-s3={{ .Values.checkpoint.s3Uri }}
                 - --checkpoint-every-steps={{ .Values.checkpoint.everySteps }}
                 # Auto-resume relies on train.py reloading the latest checkpoint.

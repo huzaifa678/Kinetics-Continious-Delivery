@@ -1,0 +1,10 @@
+apiVersion: v2
+name: etl-shards
+description: >-
+  On-demand Kubernetes indexed Job that runs kinetics-build-shards: decodes the
+  Kinetics clips (from the FSx /data mount) into WebDataset shards on S3, in
+  parallel. Run-once batch op — render + apply when the dataset changes; not an
+  auto-synced ArgoCD app (Jobs are immutable).
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
