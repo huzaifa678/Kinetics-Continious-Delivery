@@ -55,6 +55,11 @@ echo "==> Linting in-repo inference-service chart"
 helm lint "$ROOT/helm/inference-service"
 helm lint "$ROOT/helm/inference-service" --set seldon.enabled=false
 
+# The etl-shards chart emits a standard batch/v1 Job (+ ServiceAccount) — helm
+# lint, not the CUE CRD schema.
+echo "==> Linting in-repo etl-shards chart"
+helm lint "$ROOT/helm/etl-shards"
+
 echo "==> Vetting bootstrap ApplicationSet + standalone Applications"
 for f in "$ROOT"/gitops/bootstrap/*.yaml "$ROOT"/gitops/apps/*.yaml; do
   vet "$f"
