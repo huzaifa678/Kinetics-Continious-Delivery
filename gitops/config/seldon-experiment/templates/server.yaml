@@ -14,7 +14,7 @@ spec:
   podSpec:
     containers:
       - name: mlserver
-        image: {{ .Values.server.image }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         env:
           # Default runtime for models on this server whose artifact carries no
           # model-settings.json (our MLflow artifacts ship only the weights+config).
