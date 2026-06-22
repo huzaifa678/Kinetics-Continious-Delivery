@@ -2,9 +2,7 @@ image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
   tag: serve-latest
   pullPolicy: IfNotPresent
-
 replicaCount: 1
-
 # Edge mode: when enabled, the app runs as a thin edge and delegates the model
 # forward-pass to a Seldon model/experiment (kinetics_trainer.serving.remote_predictor),
 # so the S3 model init-container is skipped. Disable to run the model in-process
@@ -12,21 +10,19 @@ replicaCount: 1
 seldon:
   enabled: true
   endpoint: "http://seldon-mesh.seldon-mesh"
-  model: kinetics-cnn-lstm          # the Experiment name (Seldon routes the A/B)
+  model: kinetics-cnn-lstm # the Experiment name (Seldon routes the A/B)
   timeoutSeconds: 30
-
 # Progressive delivery via Argo Rollouts (blue/green). A new edge image comes up
 # as the preview (green), is gated by analysis, then promoted to active (blue).
 rollout:
-  autoPromotionEnabled: false       # require the analysis gate (or manual) to promote
+  autoPromotionEnabled: false # require the analysis gate (or manual) to promote
   analysis:
     enabled: true
     prometheusAddress: http://kube-prometheus-stack-prometheus.monitoring:9090
     interval: 1m
     count: 3
     failureLimit: 1
-    maxErrorRate: 0.05              # abort promotion if green's 5xx ratio >= 5%
-
+    maxErrorRate: 0.05 # abort promotion if green's 5xx ratio >= 5%
 # Model artifact: an initContainer pulls it from S3 into a shared emptyDir, so the
 # app starts with MODEL_DIR populated. Point this at a directory holding
 # model.pth + model_config.json + label_map.json.
@@ -34,12 +30,18 @@ model:
   s3Uri: s3://kinetics-pipeline-dev-checkpoints-533267178572/cnn-lstm/model/
   mountPath: /opt/ml/model
   awscliImage: amazon/aws-cli:2.17.0
-
 service:
   type: ClusterIP
   port: 8080
-
-
+ingress:
+  enabled: false
+  className: alb
+  scheme: internal 
+  tls: true # HTTPS:443 (cert auto-discovered by host); false = HTTP:80
+  host: "" 
+  certificateArn: "" 
+  loadBalancerName: kinetics-inference 
+  annotations: {}
 metrics:
   serviceMonitor:
     enabled: true
@@ -48,14 +50,12 @@ metrics:
     path: /metrics
     labels:
       release: kube-prometheus-stack
-
 # Optional OTLP tracing. Points at the in-cluster collector by default; the app
 # no-ops if this is empty (see kinetics_trainer.observability).
 observability:
   otelExporterOtlpEndpoint: "http://otel-collector.observability:4318"
   serviceName: kinetics-inference
   logLevel: INFO
-
 resources:
   requests:
     cpu: "1"
@@ -63,15 +63,11 @@ resources:
   limits:
     cpu: "2"
     memory: 4Gi
-
-# IRSA: bind a role that can read the model S3 prefix. Fill the role-arn after
-# `terraform output`. CPU inference -> runs on the existing system/EKS nodes.
 serviceAccount:
   create: true
   name: ""
   annotations: {}
-    # eks.amazonaws.com/role-arn: arn:aws:iam::533267178572:role/kinetics-inference-s3-read
-
+  # eks.amazonaws.com/role-arn: arn:aws:iam::533267178572:role/kinetics-inference-s3-read
 nodeSelector: {}
 tolerations: []
 affinity: {}
