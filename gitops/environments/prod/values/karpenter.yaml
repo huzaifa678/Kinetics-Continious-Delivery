@@ -1,0 +1,8 @@
+# Karpenter Helm values for the dev cluster. The ONLY place these env-specific
+# values live; the ApplicationSet feeds this to the chart via a $values ref.
+settings:
+  clusterName: kinetics-pipeline-dev
+  interruptionQueue: kinetics-pipeline-dev-karpenter
+serviceAccount:
+  create: true
+  name: karpenter

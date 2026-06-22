@@ -1,0 +1,20 @@
+# Seldon Core v2 runtime — dev profile: sync model serving + A/B Experiments only.
+#
+# No Kafka: Pipelines (async dataflow) are the only feature that needs Kafka, and
+# we don't use them. The sync inference path is client -> Envoy -> Agent ->
+# MLServer and never touches Kafka, so the Kafka-dependent components are turned
+# off. Re-enable these (and add a Kafka/Strimzi install) if you later want
+# Seldon Pipelines.
+dataflow:
+  disable: true
+pipelinegateway:
+  disable: true
+modelgateway:
+  disable: true
+
+# In-cluster only. Defaults are LoadBalancer (public AWS NLBs); the FastAPI edge
+# reaches Envoy over cluster DNS (seldon-mesh.seldon-mesh), so keep these private.
+scheduler:
+  serviceType: ClusterIP
+envoy:
+  serviceType: ClusterIP
