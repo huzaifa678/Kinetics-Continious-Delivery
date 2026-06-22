@@ -6,8 +6,9 @@
 #   * The git generator reads each app's catalog file (chart coordinates only).
 #   * Each Application is multi-source: source[0] is the upstream chart; source[1]
 #     is THIS repo as a `$values` ref, so the chart's values come from
-#     gitops/environments/dev/values/<app>.yaml. All env-specific values
-#     (clusterName, region, queue, ...) live there — never in an app manifest.
+#     gitops/environments/<environment>/values/<app>.yaml — the environment is set
+#     once by the list generator below. All env-specific values (clusterName,
+#     region, queue, ...) live there — never in an app manifest.
 #
 # In-repo charts (Karpenter NodePool/EC2NodeClass) and the training workload are
 # standalone Applications under gitops/apps/ (different sync semantics).
@@ -19,12 +20,19 @@ metadata:
 spec:
   goTemplate: true
   generators:
-    - git:
-        repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
-        revision: main
-        files:
-          - path: gitops/infra/*/app.yaml
-          - path: gitops/observability/*/app.yaml
+    # matrix = {target environment} x {chart catalog}. The `list` generator is the
+    # SINGLE source of the environment
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - environment: dev
+          - git:
+              repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+              revision: main
+              files:
+                - path: gitops/infra/*/app.yaml
+                - path: gitops/observability/*/app.yaml
   template:
     metadata:
       name: '{{ .name }}'
@@ -42,7 +50,7 @@ spec:
           targetRevision: '{{ .chartVersion }}'
           helm:
             valueFiles:
-              - '$values/gitops/environments/dev/values/{{ .name }}.yaml'
+              - '$values/gitops/environments/{{ .environment }}/values/{{ .name }}.yaml'
         - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
           targetRevision: main
           ref: values
