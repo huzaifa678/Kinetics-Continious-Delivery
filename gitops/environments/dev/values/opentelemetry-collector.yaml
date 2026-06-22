@@ -7,6 +7,13 @@ image:
 command:
   name: otelcol-contrib
 
+# Pinned SA name so the EKS Pod Identity association (terraform:
+# enable_xray_tracing -> otel-xray role on otel-collector/observability) binds
+# correctly. The awsxray exporter below uses these SigV4 creds.
+serviceAccount:
+  create: true
+  name: otel-collector
+
 # Expose the OTLP receiver ports on the Service (gRPC 4317 / HTTP 4318).
 ports:
   otlp:
@@ -20,12 +27,17 @@ config:
       endpoint: tempo.observability:4317
       tls:
         insecure: true
+    # AWS X-Ray (hybrid): traces survive `terraform destroy`. Creds via Pod
+    # Identity. Drop this exporter (and remove it from the pipeline below) when
+    # enable_xray_tracing = false for the env, else the collector logs auth errors.
+    awsxray:
+      region: us-east-1
   service:
     pipelines:
       traces:
         receivers: [otlp]
         processors: [batch]
-        exporters: [otlp/tempo]
+        exporters: [otlp/tempo, awsxray]
 
 resources:
   limits:
