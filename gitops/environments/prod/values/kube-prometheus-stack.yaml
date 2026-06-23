@@ -1,0 +1,22 @@
+# kube-prometheus-stack Helm values for the PROD cluster.
+
+# --- AWS Managed Prometheus (AMP) remote_write (hybrid observability) ---
+# In-cluster Prometheus keeps scraping (dcgm/node/kube-state) AND ships a durable
+# copy to AMP. Auth is SigV4 via EKS Pod Identity bound to the
+# `kube-prometheus-stack-prometheus` SA (terraform: enable_managed_prometheus).
+# Fill the url after apply:  make sync-gitops-values  (ENVIRONMENT=prod)
+prometheus:
+  prometheusSpec:
+    remoteWrite:
+      - url: ""
+        sigv4:
+          region: us-east-1
+        queueConfig:
+          capacity: 2500
+          maxSamplesPerSend: 1000
+          maxShards: 200
+
+grafana:
+  # PROD uses Amazon Managed Grafana (enable_managed_grafana=true), so the
+  # in-cluster Grafana is OFF. AMP + X-Ray are wired as AMG datasources instead.
+  enabled: false

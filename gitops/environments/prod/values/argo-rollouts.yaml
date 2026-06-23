@@ -1,0 +1,7 @@
+# Argo Rollouts controller — dev defaults are fine. CRDs ship with the chart
+# (installCRDs defaults true). The dashboard is optional and left off.
+controller:
+  replicas: 1
+
+dashboard:
+  enabled: false

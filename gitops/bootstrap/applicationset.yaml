@@ -1,13 +1,16 @@
 # Single ApplicationSet that generates an Application for every upstream Helm
 # chart under gitops/infra/* and gitops/observability/*.
 #
-# De-hardcoding pattern (no control flow — every {{ }} is inside a quoted string,
-# which is the only form ArgoCD ApplicationSet templating supports):
+# De-hardcoding pattern:
+#   * matrix = {cluster} x {chart catalog}. The CLUSTERS generator supplies the
+#     target environment from the cluster Secret's `environment` label, so each
+#     cluster self-selects its overlay — the SAME ApplicationSet on `main` serves
+#     dev and prod simultaneously (true multi-cluster). Terraform stamps that label
+#     on the in-cluster Secret from var.environment (modules/addons).
 #   * The git generator reads each app's catalog file (chart coordinates only).
 #   * Each Application is multi-source: source[0] is the upstream chart; source[1]
 #     is THIS repo as a `$values` ref, so the chart's values come from
-#     gitops/environments/dev/values/<app>.yaml. All env-specific values
-#     (clusterName, region, queue, ...) live there — never in an app manifest.
+#     gitops/environments/<environment>/values/<app>.yaml.
 #
 # In-repo charts (Karpenter NodePool/EC2NodeClass) and the training workload are
 # standalone Applications under gitops/apps/ (different sync semantics).
@@ -19,12 +22,21 @@ metadata:
 spec:
   goTemplate: true
   generators:
-    - git:
-        repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
-        revision: main
-        files:
-          - path: gitops/infra/*/app.yaml
-          - path: gitops/observability/*/app.yaml
+    # matrix = {cluster (env from its label)} x {chart catalog}. The clusters
+    # generator exposes .server + .metadata.labels.environment for each registered
+    # cluster Secret;
+    - matrix:
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+                  argocd.argoproj.io/secret-type: cluster
+          - git:
+              repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+              revision: main
+              files:
+                - path: gitops/infra/*/app.yaml
+                - path: gitops/observability/*/app.yaml
   template:
     metadata:
       name: '{{ .name }}'
@@ -34,15 +46,19 @@ spec:
     spec:
       project: default
       destination:
-        server: https://kubernetes.default.svc
+        server: '{{ .server }}'
         namespace: '{{ .namespace }}'
       sources:
         - repoURL: '{{ .chartRepoURL }}'
           chart: '{{ .chartName }}'
           targetRevision: '{{ .chartVersion }}'
           helm:
+            # Env from the cluster's `environment` label. ignoreMissingValueFiles
+            # so a cluster whose env has no overlay (e.g. test) falls back to chart
+            # defaults instead of erroring.
+            ignoreMissingValueFiles: true
             valueFiles:
-              - '$values/gitops/environments/dev/values/{{ .name }}.yaml'
+              - '$values/gitops/environments/{{ .metadata.labels.environment }}/values/{{ .name }}.yaml'
         - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
           targetRevision: main
           ref: values
