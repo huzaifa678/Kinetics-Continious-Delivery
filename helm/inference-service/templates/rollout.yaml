@@ -71,6 +71,16 @@ spec:
               value: {{ .Values.observability.serviceName | quote }}
             - name: LOG_LEVEL
               value: {{ .Values.observability.logLevel | quote }}
+            # Swagger off + CORS + Cognito JWT for the public (prod) endpoint.
+            # All no-op unless set, so dev stays open.
+            - name: ENABLE_DOCS
+              value: {{ .Values.app.enableDocs | quote }}
+            - name: CORS_ALLOW_ORIGINS
+              value: {{ .Values.app.corsAllowOrigins | quote }}
+            - name: COGNITO_ISSUER
+              value: {{ .Values.app.cognito.issuer | quote }}
+            - name: COGNITO_AUDIENCE
+              value: {{ .Values.app.cognito.audience | quote }}
           {{- if not .Values.seldon.enabled }}
           volumeMounts:
             - name: model
