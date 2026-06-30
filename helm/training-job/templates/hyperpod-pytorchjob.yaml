@@ -65,6 +65,10 @@ spec:
                 - --checkpoint-every-steps={{ .Values.checkpoint.everySteps }}
                 # Auto-resume relies on train.py reloading the latest checkpoint.
                 - --resume={{ .Values.checkpoint.resume }}
+                # Checkpoint to the FSx mount (fast shared writes) + async S3 mirror.
+                # Empty dir = write to output_dir (no FSx).
+                - --checkpoint-dir={{ .Values.checkpoint.dir }}
+                - --checkpoint-async-upload={{ .Values.checkpoint.asyncUpload }}
                 # Experiment tracking (no-op when the URI is empty).
                 - --mlflow-tracking-uri={{ .Values.tracking.mlflowTrackingUri }}
                 - --experiment-name={{ .Values.tracking.experimentName }}
