@@ -27,6 +27,9 @@ metadata:
     {{- if .Values.ingress.host }}
     external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.host | quote }}
     {{- end }}
+    {{- if .Values.ingress.wafAclArn }}
+    alb.ingress.kubernetes.io/wafv2-acl-arn: {{ .Values.ingress.wafAclArn | quote }}
+    {{- end }}
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

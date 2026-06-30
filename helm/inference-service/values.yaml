@@ -36,12 +36,24 @@ service:
 ingress:
   enabled: false
   className: alb
-  scheme: internal 
+  scheme: internal
   tls: true # HTTPS:443 (cert auto-discovered by host); false = HTTP:80
-  host: "" 
-  certificateArn: "" 
-  loadBalancerName: kinetics-inference 
+  host: ""
+  certificateArn: ""
+  loadBalancerName: kinetics-inference
+  wafAclArn: "" # prod public ALB: terraform output inference_api_waf_arn
   annotations: {}
+
+# App-level prod hardening for the FastAPI edge. All empty/true here = dev posture
+# (docs on, no CORS, no auth). sync-gitops-values sets these for prod:
+#   enableDocs=false, corsAllowOrigins=<spa url>, cognito.issuer=<cognito_issuer>,
+#   cognito.audience="<spa_client_id>,<machine_client_id>".
+app:
+  enableDocs: "true"
+  corsAllowOrigins: ""
+  cognito:
+    issuer: ""
+    audience: ""
 metrics:
   serviceMonitor:
     enabled: true
