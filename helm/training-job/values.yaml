@@ -10,8 +10,8 @@ image:
 # resource limit. WORLD_SIZE = nodes * gpusPerNode (e.g. 2 nodes x 4 = 8 ranks).
 # Scale out by bumping `nodes` to 2 / 3 (each is one g5.12xlarge).
 distributed:
-  nodes: 1            # number of GPU nodes (g5.12xlarge)
-  gpusPerNode: 4      # GPUs per node (g5.12xlarge = 4x A10G)
+  nodes: 2            # number of GPU nodes (g5.12xlarge) -> 2-node multi-node DDP
+  gpusPerNode: 4      # GPUs per node (g5.12xlarge = 4x A10G) -> WORLD_SIZE = 8
 
 # Run on the HyperPod GPU nodes only.
 nodeSelector:
@@ -72,6 +72,8 @@ checkpoint:
   s3Uri: s3://kinetics-pipeline-dev-checkpoints-533267178572/cnn-lstm/
   everySteps: 200
   resume: true               # auto-resume from latest on pod restart
+  dir: /data/checkpoints/cnn-lstm
+  asyncUpload: true
 
 # Dataset via FSx for Lustre (fast parallel reads), backed by the S3 data bucket.
 data:
