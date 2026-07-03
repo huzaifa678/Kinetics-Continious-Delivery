@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hyperpod-dependencies
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/aws/sagemaker-hyperpod-cli.git
+    targetRevision: main
+    path: helm_chart/HyperPodHelmChart
+    helm:
+      parameters:
+        - {name: cert-manager.enabled, value: "false"}
+        - {name: mlflow.enabled, value: "false"}
+        - {name: inferenceOperators.enabled, value: "false"}
+        - {name: storage.enabled, value: "false"}
+        - {name: gpu-operator.enabled, value: "false"}
+        - {name: aws-efa-k8s-device-plugin.devicePlugin.enabled, value: "false"}
+        - {name: neuron-device-plugin.devicePlugin.enabled, value: "false"}
+        - {name: trainingOperators.enabled, value: "true"}
+        - {name: health-monitoring-agent.enabled, value: "true"}
+        - {name: deep-health-check.enabled, value: "true"}
+        - {name: job-auto-restart.enabled, value: "true"}
+        - {name: mpi-operator.enabled, value: "true"}
+        - {name: nvidia-device-plugin.devicePlugin.enabled, value: "true"}
+        - {name: cluster-role-and-bindings.enabled, value: "true"}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        maxDuration: 5m
+        factor: 2
