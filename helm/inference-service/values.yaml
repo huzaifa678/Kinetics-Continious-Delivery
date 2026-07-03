@@ -1,6 +1,6 @@
 image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: serve-26a9677
+  tag: serve-1b1fcae
   pullPolicy: IfNotPresent
 replicaCount: 1
 # Edge mode: when enabled, the app runs as a thin edge and delegates the model
