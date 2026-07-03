@@ -4,14 +4,12 @@
 # training/deploy/resolve_seldon_uri.py and bumped here per release (CI yq).
 
 namespace: seldon-mesh
-
 # Custom MLServer runtime image (Dockerfile.seldon, tag seldon-<sha>). Bumped by
 # CI (docker-build.yml -> update-gitops.yml) — same .image.{repository,tag}
 # convention as the training and inference charts.
 image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: seldon-latest
-
+  tag: seldon-26a9677
 # Custom MLServer server running the KineticsRuntime (uses .image above).
 server:
   name: kinetics-mlserver
@@ -21,7 +19,6 @@ server:
   # The runtime class MLServer loads for models on this server (default for models
   # whose artifact ships no model-settings.json).
   implementation: kinetics_trainer.serving.seldon_runtime.KineticsRuntime
-
 # Model versions. champion = current prod (A), challenger = candidate (B).
 models:
   champion:
@@ -30,7 +27,6 @@ models:
   challenger:
     name: kinetics-challenger
     storageUri: s3://kinetics-pipeline-dev-mlflow-artifacts-533267178572/models/challenger/model
-
 # A/B traffic split. The Experiment's name is what the edge calls (SELDON_MODEL).
 experiment:
   name: kinetics-cnn-lstm
