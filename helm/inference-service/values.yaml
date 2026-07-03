@@ -1,6 +1,6 @@
 image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: serve-latest
+  tag: serve-26a9677
   pullPolicy: IfNotPresent
 replicaCount: 1
 # Edge mode: when enabled, the app runs as a thin edge and delegates the model
@@ -43,7 +43,6 @@ ingress:
   loadBalancerName: kinetics-inference
   wafAclArn: "" # prod public ALB: terraform output inference_api_waf_arn
   annotations: {}
-
 # App-level prod hardening for the FastAPI edge. All empty/true here = dev posture
 # (docs on, no CORS, no auth). sync-gitops-values sets these for prod:
 #   enableDocs=false, corsAllowOrigins=<spa url>, cognito.issuer=<cognito_issuer>,
