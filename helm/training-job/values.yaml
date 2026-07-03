@@ -1,22 +1,19 @@
 # Training image: build from docker/ (PyTorch + pytorchvideo + your code).
 image:
-  repository: <account>.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: latest
+  repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+  tag: sha-26a9677
   pullPolicy: IfNotPresent
-
 # Distributed config. nprocPerNode should match GPUs per node.
 # Centralized distributed setup: set these two numbers and everything derives —
 # replicas (= nodes), spec.nprocPerNode, torchrun --nproc_per_node, and the GPU
 # resource limit. WORLD_SIZE = nodes * gpusPerNode (e.g. 2 nodes x 4 = 8 ranks).
 # Scale out by bumping `nodes` to 2 / 3 (each is one g5.12xlarge).
 distributed:
-  nodes: 2            # number of GPU nodes (g5.12xlarge) -> 2-node multi-node DDP
-  gpusPerNode: 4      # GPUs per node (g5.12xlarge = 4x A10G) -> WORLD_SIZE = 8
-
+  nodes: 2 # number of GPU nodes (g5.12xlarge) -> 2-node multi-node DDP
+  gpusPerNode: 4 # GPUs per node (g5.12xlarge = 4x A10G) -> WORLD_SIZE = 8
 # Run on the HyperPod GPU nodes only.
 nodeSelector:
   node.kubernetes.io/instance-type: ml.g5.12xlarge
-
 tolerations:
   - key: "sagemaker.amazonaws.com/node-health-status"
     operator: "Exists"
@@ -27,21 +24,19 @@ tolerations:
   - key: "nvidia.com/gpu"
     operator: "Exists"
     effect: "NoSchedule"
-
 # GPU limit is derived from distributed.gpusPerNode (see the template) so it can't
 # drift; set CPU/memory requests here.
 resources:
   requests:
     cpu: "8"
     memory: 48Gi
-
 # Hyperparameters for the CNN-LSTM (passed to train.py as flags/env).
 training:
-  model: cnn_lstm            # cnn_lstm (primary) | r2plus1d (3D-CNN baseline)
+  model: cnn_lstm # cnn_lstm (primary) | r2plus1d (3D-CNN baseline)
   backbone: resnet50
-  pretrained: true           # ImageNet/Kinetics transfer learning
-  freezeBackboneEpochs: 3    # warm up head before unfreezing
-  numClasses: 400            # Kinetics-400
+  pretrained: true # ImageNet/Kinetics transfer learning
+  freezeBackboneEpochs: 3 # warm up head before unfreezing
+  numClasses: 400 # Kinetics-400
   clipLength: 16
   batchSize: 16
   epochs: 30
@@ -49,32 +44,28 @@ training:
   # Scale LR for the global (multi-node) batch: none | linear | sqrt. Default none
   # (single-node safe). For multi-node (distributed.nodes > 1) use "sqrt" with AdamW.
   lrScaling: none
-  mixedPrecision: bf16       # amp: cuts time + memory -> cuts cost
+  mixedPrecision: bf16 # amp: cuts time + memory -> cuts cost
   torchCompile: true
-
 # Experiment tracking (SageMaker-managed MLflow). Empty mlflowTrackingUri keeps
 # tracking disabled (the trainer no-ops). Set it to the tracking server ARN from
 # `terraform output mlflow_tracking_server_arn`.
 tracking:
-  mlflowTrackingUri: "arn:aws:sagemaker:us-east-1:533267178572:mlflow-tracking-server/kinetics-pipeline-dev-mlflow"  # empty "" to disable
+  mlflowTrackingUri: "arn:aws:sagemaker:us-east-1:533267178572:mlflow-tracking-server/kinetics-pipeline-dev-mlflow" # empty "" to disable
   experimentName: kinetics-cnn-lstm
-
 # Observability. OpenTelemetry tracing is OFF unless otelExporterOtlpEndpoint is
 # set (the trainer falls back to a no-op tracer); structured logging is always on.
 observability:
-  otelExporterOtlpEndpoint: ""   # e.g. http://otel-collector.observability:4318
+  otelExporterOtlpEndpoint: "" # e.g. http://otel-collector.observability:4318
   serviceName: kinetics-trainer
   logLevel: INFO
-
 # Spot-safe checkpointing: write to S3 frequently so an interruption costs
 # minutes, not hours. Training resumes from the latest checkpoint on restart.
 checkpoint:
   s3Uri: s3://kinetics-pipeline-dev-checkpoints-533267178572/cnn-lstm/
   everySteps: 200
-  resume: true               # auto-resume from latest on pod restart
+  resume: true # auto-resume from latest on pod restart
   dir: /data/checkpoints/cnn-lstm
   asyncUpload: true
-
 # Dataset via FSx for Lustre (fast parallel reads), backed by the S3 data bucket.
 data:
   fsxClaimName: fsx-lustre-pvc
@@ -84,9 +75,9 @@ data:
   # Data source. "manifest" (default) decodes mp4s each epoch. "shards" streams
   # pre-decoded WebDataset shards built by the etl-shards Job (no per-epoch decode).
   format: manifest
-  trainShards: ""   # e.g. "pipe:aws s3 cp s3://.../shards/train/clips-{00000..00063}.tar -"
+  trainShards: "" # e.g. "pipe:aws s3 cp s3://.../shards/train/clips-{00000..00063}.tar -"
   valShards: ""
-  shardEpochSize: 0  # total train samples/epoch (DDP-safe resample); 0 = single pass
+  shardEpochSize: 0 # total train samples/epoch (DDP-safe resample); 0 = single pass
   # Set create: true and fill these from `terraform output` to provision the
   # static FSx PV/PVC via this chart. Leave false if you manage the PVC elsewhere.
   fsx:
@@ -95,7 +86,6 @@ data:
     mountName: ""
     dnsName: ""
     capacity: 1200Gi
-
 # HyperPod training operator run policy. The operator detects node/GPU faults
 # and auto-resumes the job (from the latest S3 checkpoint) up to
 # jobMaxRetryCount times — this is the HyperPod-native resilience, replacing
