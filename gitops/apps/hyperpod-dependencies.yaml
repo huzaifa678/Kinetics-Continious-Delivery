@@ -24,6 +24,9 @@ spec:
         - {name: neuron-device-plugin.devicePlugin.enabled, value: "false"}
         - {name: trainingOperators.enabled, value: "true"}
         - {name: health-monitoring-agent.enabled, value: "true"}
+        # Autoscaling (Continuous/Karpenter) requires HMA >= 1.0.790.0_1.0.266.0;
+        # the chart default is older. Pin the current us-east-1 build explicitly.
+        - {name: health-monitoring-agent.hmaimage, value: "767398015722.dkr.ecr.us-east-1.amazonaws.com/hyperpod-health-monitoring-agent:1.0.1892.0_1.0.424.0"}
         - {name: deep-health-check.enabled, value: "true"}
         - {name: job-auto-restart.enabled, value: "true"}
         - {name: mpi-operator.enabled, value: "true"}
