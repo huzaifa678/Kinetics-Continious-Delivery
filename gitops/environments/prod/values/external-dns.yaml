@@ -1,0 +1,13 @@
+provider:
+  name: aws
+policy: upsert-only
+registry: txt
+txtOwnerId: kinetics-pipeline-prod
+serviceAccount:
+  create: true
+  name: external-dns
+env:
+  - name: AWS_REGION
+    value: us-east-1
+# domainFilters:
+#   - inference.example.com

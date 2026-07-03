@@ -1,0 +1,5 @@
+clusterName: kinetics-pipeline-prod
+region: us-east-1
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller

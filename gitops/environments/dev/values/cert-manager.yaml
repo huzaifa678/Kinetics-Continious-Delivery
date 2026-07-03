@@ -1,0 +1,3 @@
+# cert-manager — dev cluster. Install CRDs with the chart.
+crds:
+  enabled: true

@@ -1,0 +1,7 @@
+# AWS Load Balancer Controller — dev cluster. clusterName required; vpcId
+# auto-discovered. SA is Pod-Identity-associated by Terraform.
+clusterName: kinetics-pipeline-dev
+region: us-east-1
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller

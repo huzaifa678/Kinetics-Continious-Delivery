@@ -1,0 +1,9 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# external-dns — registers the inference ALB's Route53 record (the ALB DNS name
+# isn't known ahead of time). Auth via Pod Identity (SA external-dns/kube-system).
+# Env values: environments/<env>/values/external-dns.yaml
+name: external-dns
+namespace: kube-system
+chartRepoURL: https://kubernetes-sigs.github.io/external-dns/
+chartName: external-dns
+chartVersion: "1.15.2"

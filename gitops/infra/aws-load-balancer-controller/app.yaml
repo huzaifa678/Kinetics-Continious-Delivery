@@ -1,0 +1,9 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# AWS Load Balancer Controller — provisions the internal ALB behind the inference
+# Ingress. Auth via Pod Identity (SA aws-load-balancer-controller/kube-system,
+# associated by Terraform). Env values: .../values/aws-load-balancer-controller.yaml
+name: aws-load-balancer-controller
+namespace: kube-system
+chartRepoURL: https://aws.github.io/eks-charts
+chartName: aws-load-balancer-controller
+chartVersion: "1.13.3"
