@@ -39,7 +39,11 @@ spec:
                 - path: gitops/observability/*/app.yaml
   template:
     metadata:
-      name: '{{ .name }}'
+      # Name from the git file's directory basename (gitops/infra/<app>/), NOT
+      # `.name`: in a clusters × git matrix the clusters generator also sets
+      # `.name` (the cluster), which collides and names every app after the
+      # cluster ("duplicate name: in-cluster"). basename is git-only, no clash.
+      name: '{{ .path.basename }}'
       namespace: argocd
       finalizers:
         - resources-finalizer.argocd.argoproj.io
@@ -58,7 +62,7 @@ spec:
             # defaults instead of erroring.
             ignoreMissingValueFiles: true
             valueFiles:
-              - '$values/gitops/environments/{{ .metadata.labels.environment }}/values/{{ .name }}.yaml'
+              - '$values/gitops/environments/{{ .metadata.labels.environment }}/values/{{ .path.basename }}.yaml'
         - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
           targetRevision: main
           ref: values
