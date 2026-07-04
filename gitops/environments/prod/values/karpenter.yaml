@@ -1,8 +1,11 @@
-# Karpenter Helm values for the dev cluster. The ONLY place these env-specific
+# Karpenter Helm values for the PROD cluster. The ONLY place these env-specific
 # values live; the ApplicationSet feeds this to the chart via a $values ref.
 settings:
-  clusterName: kinetics-pipeline-dev
-  interruptionQueue: kinetics-pipeline-dev-karpenter
+  clusterName: kinetics-pipeline-prod
+  interruptionQueue: kinetics-pipeline-prod-karpenter
+  # Pin the API endpoint so Karpenter never calls eks:DescribeCluster at startup
+  # (the controller role scopes DescribeCluster to this cluster only).
+  clusterEndpoint: https://31C03B304FCA7CE1489ACB09B2591005.gr7.us-east-1.eks.amazonaws.com
 serviceAccount:
   create: true
   name: karpenter

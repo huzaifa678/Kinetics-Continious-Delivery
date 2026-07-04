@@ -1,5 +1,11 @@
 config:
   logLevel: info
+  # Identity for the git write-back commits (the Application annotations set
+  # write-back-method: git). REQUIRES a git write credential for this repo —
+  # register the CD repo in ArgoCD with a write-capable token, or add a
+  # `git-creds` secret in the argocd namespace. See README.
+  gitCommitUser: kinetics-image-updater
+  gitCommitMail: image-updater@users.noreply.github.com
   registries:
     - name: ECR
       api_url: https://533267178572.dkr.ecr.us-east-1.amazonaws.com

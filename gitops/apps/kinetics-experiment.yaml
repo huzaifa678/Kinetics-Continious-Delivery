@@ -1,13 +1,17 @@
-# Seldon A/B serving (custom Server + champion/challenger Models + Experiment),
-# from the in-repo seldon-experiment chart. Standalone (not the ApplicationSet)
-# because its Model storageUris + Experiment weights are bumped per release, like
-# the training/inference charts. Auto-sync: these are lightweight CRs (CPU); the
-# heavy model servers scale with Seldon, and a weight bump is a cheap reconcile.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: kinetics-experiment
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: seldon=533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+    argocd-image-updater.argoproj.io/seldon.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/seldon.allow-tags: regexp:^seldon-
+    argocd-image-updater.argoproj.io/seldon.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/seldon.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:/gitops/config/seldon-experiment/values.yaml
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

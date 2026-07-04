@@ -1,13 +1,17 @@
-# The inference backend, from the in-repo Helm chart. Unlike the training job
-# (manual sync, consumes GPUs), inference is CPU-only and safe to AUTO-sync: a git
-# push reconciles the Deployment + Service + ServiceMonitor automatically.
-# Standalone (not in the ApplicationSet) so its image tag is bumped per-deploy by
-# CI, like the training chart.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: kinetics-inference
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: serve=533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+    argocd-image-updater.argoproj.io/serve.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/serve.allow-tags: regexp:^serve-
+    argocd-image-updater.argoproj.io/serve.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/serve.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:/helm/inference-service/values.yaml
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

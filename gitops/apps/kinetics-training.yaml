@@ -6,6 +6,16 @@ kind: Application
 metadata:
   name: kinetics-training
   namespace: argocd
+  annotations:
+    # argocd image updater updates the images tags
+    argocd-image-updater.argoproj.io/image-list: training=533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+    argocd-image-updater.argoproj.io/training.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/training.allow-tags: regexp:^sha-
+    argocd-image-updater.argoproj.io/training.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/training.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:/helm/training-job/values.yaml
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
