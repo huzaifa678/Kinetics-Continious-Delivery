@@ -1,7 +1,7 @@
 image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: sha-latest         
-  pullPolicy: IfNotPresent
+  tag: sha-latest
+  pullPolicy: Always      # moving tag (sha-latest) → always pull the current build
 
 
 numShards: 64
