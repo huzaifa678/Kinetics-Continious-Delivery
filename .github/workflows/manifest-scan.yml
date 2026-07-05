@@ -1,0 +1,31 @@
+name: manifest-scan
+
+# Security scanning for the GitOps delivery artifacts: Checkov over the Helm charts
+# (rendered), the raw Kubernetes manifests, and a secrets sweep. Complements the
+# existing CUE validation (make validate-manifests). Report-only (soft_fail) until
+# the initial findings are triaged — then remove soft_fail to make it a merge gate.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkov (helm charts + k8s manifests + secrets)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          # helm  -> renders every Chart.yaml it finds and scans the output
+          # kubernetes -> raw manifests under gitops/
+          # secrets    -> hardcoded-credential sweep
+          framework: helm,kubernetes,secrets
+          soft_fail: true
+          compact: true
+          quiet: true
+          output_format: cli
