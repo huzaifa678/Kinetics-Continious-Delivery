@@ -25,6 +25,10 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: false        # Pod Identity injects creds, not the SA token
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -37,10 +41,17 @@ spec:
         - name: dataset
           persistentVolumeClaim:
             claimName: {{ .Values.data.fsxClaimName }}
+        - name: tmp                              # writable scratch for read-only rootfs
+          emptyDir: {}
       containers:
         - name: build-shards
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           # Override the training image's torchrun entrypoint. JOB_COMPLETION_INDEX
           # is injected by the indexed Job -> the per-pod shard id.
           command: ["sh", "-lc"]
@@ -56,5 +67,7 @@ spec:
           volumeMounts:
             - name: dataset
               mountPath: {{ .Values.data.mountPath }}
+            - name: tmp
+              mountPath: /tmp
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
