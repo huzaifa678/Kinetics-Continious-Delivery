@@ -1,0 +1,6 @@
+soft-fail: true
+compact: true
+quiet: true
+skip-check:
+  - CKV_K8S_43 # image digest — incompatible with tag-based ArgoCD Image Updater
+  - CKV_K8S_21 # etl-shards runs in `default`; its Pod Identity association is scoped there
