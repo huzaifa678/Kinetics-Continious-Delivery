@@ -12,6 +12,43 @@ permissions:
   contents: read
 
 jobs:
+  policy:
+    runs-on: ubuntu-latest
+    env:
+      CONFTEST_VERSION: "0.56.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Install Conftest (pinned + checksum-verified)
+        run: |
+          set -euo pipefail
+          base="https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}"
+          tarball="conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz"
+          curl -fsSL "${base}/${tarball}"    -o "${tarball}"
+          curl -fsSL "${base}/checksums.txt" -o checksums.txt
+          grep " ${tarball}\$" checksums.txt | sha256sum -c -
+          tar -xzf "${tarball}" conftest && sudo install -m 0755 conftest /usr/local/bin/conftest
+
+      - name: conftest verify (rego unit tests)
+        run: conftest verify --policy policy/
+
+      - name: Render charts
+        run: |
+          set -euo pipefail
+          mkdir -p rendered
+          helm template kinetics helm/inference-service                            > rendered/inference.yaml
+          helm template kinetics helm/inference-service --set seldon.enabled=false > rendered/inference-local.yaml
+          helm template etl      helm/etl-shards                                   > rendered/etl.yaml
+          helm template train    helm/training-job                                 > rendered/train.yaml
+          helm template train-fsx helm/training-job \
+            --set data.fsx.create=true --set data.fsx.fsxId=fs-0123456789abcdef0 \
+            --set data.fsx.mountName=abcdefgh \
+            --set data.fsx.dnsName=fs-0123456789abcdef0.fsx.us-east-1.amazonaws.com > rendered/train-fsx.yaml
+          helm template seldon   gitops/config/seldon-experiment                   > rendered/seldon.yaml
+
+      - name: conftest test (rendered manifests)
+        run: conftest test rendered/*.yaml --policy policy --namespace kubernetes
+
   checkov:
     runs-on: ubuntu-latest
     steps:
