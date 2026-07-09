@@ -45,6 +45,7 @@ jobs:
             --set data.fsx.mountName=abcdefgh \
             --set data.fsx.dnsName=fs-0123456789abcdef0.fsx.us-east-1.amazonaws.com > rendered/train-fsx.yaml
           helm template seldon   gitops/config/seldon-experiment                   > rendered/seldon.yaml
+          helm template external-secrets gitops/config/external-secrets            > rendered/external-secrets.yaml
 
       - name: conftest test (rendered manifests)
         run: conftest test rendered/*.yaml --policy policy --namespace kubernetes

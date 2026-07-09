@@ -1,0 +1,8 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# external-secrets — manages external secrets for the cluster.
+# Env values: environments/<env>/values/external-secrets.yaml
+name: external-secrets
+namespace: external-secrets
+chartRepoURL: https://charts.external-secrets.io
+chartName: external-secrets
+chartVersion: "2.7.0"
