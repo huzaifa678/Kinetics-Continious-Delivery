@@ -2,7 +2,30 @@ image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
   tag: serve-1b1fcae
   pullPolicy: IfNotPresent
-replicaCount: 1
+replicaCount: 1 # only used when autoscaling.enabled = false (KEDA owns replicas otherwise)
+# KEDA autoscaling for the FastAPI inference Rollout. When enabled, a ScaledObject
+# targets the Rollout and KEDA (via a managed HPA) scales it on a Prometheus
+# query — the Rollout's static `replicaCount` above is then dropped so the two
+# don't fight. Default trigger is the in-cluster kube-prometheus-stack (the same
+# server the Rollout analysis gate uses): lower latency, no remote_write lag, no
+# per-query cost. Set amp.enabled to drive scaling off AWS Managed Prometheus
+# instead (SigV4 via EKS Pod Identity — needs a KEDA Pod Identity role in
+# terraform, and point prometheusAddress at the AMP query URL).
+autoscaling:
+  enabled: true
+  minReplicaCount: 1 # set 0 for scale-to-zero (adds a cold start: init-pull + model load)
+  maxReplicaCount: 5
+  pollingInterval: 15 # seconds between metric checks
+  cooldownPeriod: 120 # seconds of no activity before scaling down (toward min)
+  scaleDownStabilizationSeconds: 120 # HPA scale-down damping to avoid flapping
+  # Target requests/sec PER replica — KEDA scales so (query / replicas) ~ threshold.
+  threshold: "20"
+  activationThreshold: "1" # scale 0->1 once real traffic appears (only matters if min=0)
+  prometheusAddress: http://kube-prometheus-stack-prometheus.monitoring:9090
+  query: sum(rate(inference_requests_total[1m]))
+  amp:
+    enabled: false # true = query AMP via SigV4 (set prometheusAddress to the AMP query URL)
+    awsRegion: us-east-1
 # Edge mode: when enabled, the app runs as a thin edge and delegates the model
 # forward-pass to a Seldon model/experiment (kinetics_trainer.serving.remote_predictor),
 # so the S3 model init-container is skipped. Disable to run the model in-process

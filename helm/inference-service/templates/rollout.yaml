@@ -5,7 +5,11 @@ metadata:
   labels:
     {{- include "kinetics-inference.labels" . | nindent 4 }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
+  # When autoscaling is on, KEDA's managed HPA owns the replica count — setting it
+  # here too would make the two controllers fight, so it's omitted.
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "kinetics-inference.selectorLabels" . | nindent 6 }}

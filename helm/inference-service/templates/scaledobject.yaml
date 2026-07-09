@@ -1,0 +1,49 @@
+{{- if .Values.autoscaling.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "kinetics-inference.fullname" . }}
+  labels:
+    {{- include "kinetics-inference.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    name: {{ include "kinetics-inference.fullname" . }}
+  minReplicaCount: {{ .Values.autoscaling.minReplicaCount }}
+  maxReplicaCount: {{ .Values.autoscaling.maxReplicaCount }}
+  pollingInterval: {{ .Values.autoscaling.pollingInterval }}
+  cooldownPeriod: {{ .Values.autoscaling.cooldownPeriod }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: {{ .Values.autoscaling.scaleDownStabilizationSeconds }}
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: {{ .Values.autoscaling.prometheusAddress | quote }}
+        query: {{ .Values.autoscaling.query | quote }}
+        threshold: {{ .Values.autoscaling.threshold | quote }}
+        activationThreshold: {{ .Values.autoscaling.activationThreshold | quote }}
+        {{- if .Values.autoscaling.amp.enabled }}
+        awsRegion: {{ .Values.autoscaling.amp.awsRegion | quote }}
+        {{- end }}
+      {{- if .Values.autoscaling.amp.enabled }}
+      # SigV4-sign the AMP query with the KEDA operator's EKS Pod Identity.
+      authenticationRef:
+        name: {{ include "kinetics-inference.fullname" . }}-amp
+      {{- end }}
+{{- if .Values.autoscaling.amp.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ include "kinetics-inference.fullname" . }}-amp
+  labels:
+    {{- include "kinetics-inference.labels" . | nindent 4 }}
+spec:
+  podIdentity:
+    provider: aws
+{{- end }}
+{{- end }}
