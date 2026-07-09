@@ -1,0 +1,14 @@
+# KEDA — dev cluster. Small footprint; install the CRDs with the chart. The
+# operator itself needs no AWS unless a ScaledObject uses the AWS SigV4 (AMP)
+# trigger — the inference ScaledObject defaults to the in-cluster Prometheus, so
+# no Pod Identity role is required here.
+crds:
+  install: true
+resources:
+  operator:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

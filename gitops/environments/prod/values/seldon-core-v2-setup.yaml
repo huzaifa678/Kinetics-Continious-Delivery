@@ -1,5 +1,39 @@
-# Seldon Core v2 setup (operator + default SeldonConfig/ServerConfig).
-# Dev defaults: namespace-scoped controller (manages seldon-mesh), control plane
-# PLAINTEXT (no mTLS / cert-manager needed for dev). Override here when hardening
-# for prod (security.* -> SSL, controller clusterwide, etc.).
-{}
+# Seldon Core v2 setup — PROD. Kafka ENABLED for Seldon Pipelines (async
+# dataflow), backed by Amazon MSK over SASL/SCRAM + TLS. MSK is provisioned by
+# terraform (infra tfvars.prod: enable_msk=true, msk_client_authentication=
+# sasl_scram; 2 brokers because az_count=2). The Kafka-dependent runtime
+# components are re-enabled in seldon-core-v2-runtime.yaml.
+#
+# This chart owns the base SeldonConfig: the Kafka broker endpoint + the SASL/SCRAM
+# security every Seldon component uses.
+#   * The `seldon-kafka-sasl` Secret (namespace seldon-mesh, key `password`) is now
+#     synced automatically by the External Secrets Operator from Secrets Manager
+#     `AmazonMSK_kinetics-pipeline-prod_scram` — see
+#     gitops/config/external-secrets/templates/kafka-sasl-secret.yaml. No manual
+#     `kubectl create secret` step.
+#   * ONE env-specific wiring is still NOT committable and must be applied out-of-band:
+#     kafka.bootstrap below <- the MSK SASL/SCRAM endpoint (port 9096):
+#       terraform -chdir=terraform/infra output -raw msk_bootstrap_brokers_sasl_scram
+security:
+  kafka:
+    protocol: SASL_SSL # MSK SASL/SCRAM = SASL auth over broker TLS (not PLAINTEXT)
+    sasl:
+      mechanism: SCRAM-SHA-512
+      client:
+        username: seldon # matches terraform var.scram_username (default "seldon")
+        secret: seldon-kafka-sasl # k8s Secret holding the SCRAM password
+        passwordPath: password # key within that Secret
+    ssl:
+      client:
+        # MSK brokers present a public Amazon Trust Services cert; verify the
+        # broker hostname. No client cert is needed under SASL_SSL, so the
+        # keyPath/crtPath defaults are unused.
+        endpointIdentificationAlgorithm: https
+kafka:
+  # REPLACE with `terraform -chdir=terraform/infra output -raw msk_bootstrap_brokers_sasl_scram`
+  # (the :9096 SASL/SCRAM listener). Left as a loud placeholder so an unwired sync
+  # fails fast instead of silently pointing at the chart's in-cluster default.
+  bootstrap: REPLACE_WITH_MSK_SASL_SCRAM_BOOTSTRAP:9096
+  topics:
+    replicationFactor: 2 # prod MSK has 2 brokers (az_count=2); RF>1 for durability
+    numPartitions: 1

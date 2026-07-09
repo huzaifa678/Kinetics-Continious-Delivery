@@ -1,0 +1,14 @@
+# KEDA — prod cluster. Same lean footprint. The inference ScaledObject scales the
+# FastAPI Rollout off the in-cluster Prometheus by default; flip
+# inference-service `autoscaling.amp.enabled=true` (and provision the KEDA Pod
+# Identity role in terraform) only if you want to drive scaling off AMP via SigV4.
+crds:
+  install: true
+resources:
+  operator:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

@@ -1,0 +1,10 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# KEDA — Kubernetes event-driven autoscaler. Powers the FastAPI inference
+# Rollout's ScaledObject (Prometheus trigger). Scoped to that self-hosted serving
+# path only — the Seldon path keeps its own Server/Model scaling, and nodes/GPUs
+# stay on Karpenter. Env values: environments/<env>/values/keda.yaml
+name: keda
+namespace: keda
+chartRepoURL: https://kedacore.github.io/charts
+chartName: keda
+chartVersion: "2.20.1"

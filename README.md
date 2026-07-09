@@ -86,6 +86,9 @@ gitops/
     ack-sagemaker/          #   ACK SageMaker controller
     karpenter/              #   Karpenter
     fsx-csi-driver/         #   FSx for Lustre CSI driver
+    keda/                   #   KEDA — autoscales the FastAPI inference Rollout
+                            #   (ScaledObject in helm/inference-service; Prometheus
+                            #   trigger, default in-cluster kube-prometheus-stack)
   observability/            # chart coordinates only
     kube-prometheus-stack/  #   Prometheus + Grafana (metrics; ns monitoring)
     dcgm-exporter/          #   NVIDIA DCGM GPU metrics (ns monitoring)
