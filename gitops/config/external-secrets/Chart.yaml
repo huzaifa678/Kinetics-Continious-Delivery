@@ -1,0 +1,5 @@
+apiVersion: v2
+name: external-secrets
+description: External Secrets for managing external secrets in the cluster
+type: application
+version: 0.1.0

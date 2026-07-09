@@ -1,0 +1,12 @@
+clusterSecretStore:
+  name: aws-secrets
+  region: us-east-1
+
+refreshInterval: 1h
+
+kafkaSasl:
+  enabled: true
+  secretName: seldon-kafka-sasl
+  namespace: seldon-mesh
+  remoteKey: AmazonMSK_kinetics-pipeline-prod_scram
+  passwordProperty: password
