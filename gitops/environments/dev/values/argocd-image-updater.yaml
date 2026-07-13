@@ -1,5 +1,13 @@
+---
 config:
   logLevel: info
+  # Dev owns image bumps via Image Updater (prod is CI-owned — docker-build.yml
+  # dispatch environment=prod runs the update-gitops write-back). The git
+  # write-back on the kinetics-{training,inference,experiment} Apps needs a
+  # commit identity; mirror prod. Write credential for the CD repo is registered
+  # out-of-band (see gitops/bootstrap/secrets + README).
+  gitCommitUser: kinetics-image-updater
+  gitCommitMail: image-updater@users.noreply.github.com
   registries:
     - name: ECR
       api_url: https://533267178572.dkr.ecr.us-east-1.amazonaws.com
