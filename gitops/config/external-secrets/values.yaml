@@ -1,3 +1,4 @@
+---
 clusterSecretStore:
   name: aws-secrets
   region: us-east-1

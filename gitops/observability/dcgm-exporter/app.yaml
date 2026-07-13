@@ -1,3 +1,4 @@
+---
 # Catalog entry (ApplicationSet input data — NOT a k8s manifest).
 # NVIDIA DCGM exporter — GPU metrics. No env-specific values.
 name: dcgm-exporter

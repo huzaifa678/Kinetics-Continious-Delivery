@@ -1,3 +1,4 @@
+---
 # Karpenter cluster config (NodePool + EC2NodeClass), from the in-repo chart so
 # nodeRole / discovery tag come from chart values (gitops/config/karpenter/values.yaml),
 # not hardcoded in the CRs. Standalone (not in the ApplicationSet) because it's an

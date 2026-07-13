@@ -1,3 +1,4 @@
+---
 # Karpenter Helm values for the PROD cluster. The ONLY place these env-specific
 # values live; the ApplicationSet feeds this to the chart via a $values ref.
 settings:

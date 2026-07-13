@@ -1,3 +1,4 @@
+---
 # NodePool — what Karpenter may provision for general/utility CPU workloads
 # (controllers, ArgoCD, Prometheus, dataset prep). GPU training nodes are NOT
 # here — those are managed by the HyperPod cluster.

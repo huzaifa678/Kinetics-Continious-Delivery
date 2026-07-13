@@ -1,3 +1,4 @@
+---
 # Catalog entry (ApplicationSet input data — NOT a k8s manifest).
 # Seldon Core v2 CRDs (Model, Experiment, Server, Pipeline, SeldonRuntime, ...).
 # Wave 0 of the Seldon install: must reconcile before setup/runtime/servers. The

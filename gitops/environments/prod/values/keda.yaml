@@ -1,3 +1,4 @@
+---
 # KEDA — prod cluster. Same lean footprint. The inference ScaledObject scales the
 # FastAPI Rollout off the in-cluster Prometheus by default; flip
 # inference-service `autoscaling.amp.enabled=true` (and provision the KEDA Pod

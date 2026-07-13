@@ -1,3 +1,4 @@
+---
 # Custom MLServer server: the stock mlserver ServerConfig with our image swapped
 # in, so the KineticsRuntime (PyAV + torch + CNNLSTM) is available. Models that
 # require the `kinetics` capability are scheduled here.

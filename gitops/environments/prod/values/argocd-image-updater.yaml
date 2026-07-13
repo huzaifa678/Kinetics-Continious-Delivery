@@ -1,3 +1,4 @@
+---
 config:
   logLevel: info
   # Identity for the git write-back commits (the Application annotations set

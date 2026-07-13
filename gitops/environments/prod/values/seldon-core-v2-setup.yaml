@@ -1,3 +1,4 @@
+---
 # Seldon Core v2 setup — PROD. Kafka ENABLED for Seldon Pipelines (async
 # dataflow), backed by Amazon MSK over SASL/SCRAM + TLS. MSK is provisioned by
 # terraform (infra tfvars.prod: enable_msk=true, msk_client_authentication=

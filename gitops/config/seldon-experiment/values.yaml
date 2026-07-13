@@ -1,3 +1,4 @@
+---
 # Seldon A/B for the CNN-LSTM action recognizer.
 #
 # storageUri values are resolved from the MLflow Model Registry by

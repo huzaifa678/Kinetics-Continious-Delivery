@@ -1,3 +1,4 @@
+---
 # App-of-apps for the standalone Applications under gitops/apps/ (the in-repo
 # Karpenter config chart and the training workload). Together with
 # applicationset.yaml in this same folder, pointing a bootstrap Application at

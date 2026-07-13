@@ -1,3 +1,4 @@
+---
 {{- if .Values.ingress.enabled }}
 # Internal ALB in front of the inference edge, provisioned by the AWS Load
 # Balancer Controller. HTTPS via the ACM cert (terraform output

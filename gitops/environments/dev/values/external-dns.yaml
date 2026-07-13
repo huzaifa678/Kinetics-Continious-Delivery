@@ -1,3 +1,4 @@
+---
 # external-dns — dev cluster. Pod-Identity SA (external-dns/kube-system).
 provider:
   name: aws

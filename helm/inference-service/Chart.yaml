@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: kinetics-inference
 description: FastAPI inference backend for the CNN-LSTM action recognizer, with Prometheus metrics + OTLP tracing.

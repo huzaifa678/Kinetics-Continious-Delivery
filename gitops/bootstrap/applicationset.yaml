@@ -1,3 +1,4 @@
+---
 # Single ApplicationSet that generates an Application for every upstream Helm
 # chart under gitops/infra/* and gitops/observability/*.
 #

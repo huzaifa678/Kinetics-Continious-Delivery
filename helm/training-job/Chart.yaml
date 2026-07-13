@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: kinetics-training
 description: Distributed PyTorch training job (CNN-LSTM on Kinetics) for HyperPod-on-EKS, with Spot-safe checkpointing.

@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: karpenter-config
 description: Karpenter NodePool + EC2NodeClass for the platform (values from env)

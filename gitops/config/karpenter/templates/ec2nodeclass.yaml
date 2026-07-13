@@ -1,3 +1,4 @@
+---
 # EC2NodeClass — AWS launch settings Karpenter uses for nodes. References the
 # node IAM role (Terraform) and discovers subnets/SGs by the karpenter.sh/discovery
 # tag (set in the vpc/eks modules). Values come from env, not hardcoded.

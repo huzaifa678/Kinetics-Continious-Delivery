@@ -1,3 +1,4 @@
+---
 # Active service — Argo Rollouts points it at the current (live) ReplicaSet.
 apiVersion: v1
 kind: Service

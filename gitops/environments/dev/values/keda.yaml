@@ -1,3 +1,4 @@
+---
 # KEDA — dev cluster. Small footprint; install the CRDs with the chart. The
 # operator itself needs no AWS unless a ScaledObject uses the AWS SigV4 (AMP)
 # trigger — the inference ScaledObject defaults to the in-cluster Prometheus, so

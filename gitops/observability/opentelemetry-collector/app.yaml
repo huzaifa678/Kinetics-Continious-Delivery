@@ -1,3 +1,4 @@
+---
 # Catalog entry (ApplicationSet input data — NOT a k8s manifest).
 # OpenTelemetry Collector — OTLP trace gateway for the trainer/inference spans.
 # Receives OTLP (4317 grpc / 4318 http) and forwards traces to Tempo.

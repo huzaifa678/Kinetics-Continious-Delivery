@@ -1,3 +1,4 @@
+---
 # Static PV/PVC binding the FSx for Lustre filesystem created in Terraform.
 # Fill fsxId / mountName / dnsName from `terraform output`.
 {{- if .Values.data.fsx.create }}

@@ -1,3 +1,4 @@
+---
 # Seldon Core v2 runtime — PROD. Kafka ENABLED: Pipelines (async dataflow) run
 # on Amazon MSK (broker + SASL/SCRAM wiring is in seldon-core-v2-setup.yaml). The
 # Kafka-dependent components are therefore ON (chart default). The sync Model +

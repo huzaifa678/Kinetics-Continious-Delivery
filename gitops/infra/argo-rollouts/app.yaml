@@ -1,3 +1,4 @@
+---
 # Catalog entry (ApplicationSet input data — NOT a k8s manifest).
 # Argo Rollouts — progressive delivery (blue/green + analysis) for the inference
 # EDGE. Self-contained chart (CRDs + controller in one release), so no cross-app

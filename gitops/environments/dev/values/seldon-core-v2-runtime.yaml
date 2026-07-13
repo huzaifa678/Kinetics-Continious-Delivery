@@ -1,3 +1,4 @@
+---
 # Seldon Core v2 runtime — dev profile: sync model serving + A/B Experiments only.
 #
 # No Kafka: Pipelines (async dataflow) are the only feature that needs Kafka, and

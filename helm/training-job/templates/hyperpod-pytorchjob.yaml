@@ -1,3 +1,4 @@
+---
 apiVersion: sagemaker.amazonaws.com/v1
 kind: HyperPodPyTorchJob
 metadata:

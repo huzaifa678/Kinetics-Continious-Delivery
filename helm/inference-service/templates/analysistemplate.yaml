@@ -1,3 +1,4 @@
+---
 {{- if .Values.rollout.analysis.enabled }}
 # Promotion gate for the blue/green Rollout: query Prometheus (kube-prometheus-stack)
 # for the edge's own error rate. If the green stack's 5xx ratio stays under the

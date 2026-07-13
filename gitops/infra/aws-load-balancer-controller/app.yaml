@@ -1,3 +1,4 @@
+---
 # Catalog entry (ApplicationSet input data — NOT a k8s manifest).
 # AWS Load Balancer Controller — provisions the internal ALB behind the inference
 # Ingress. Auth via Pod Identity (SA aws-load-balancer-controller/kube-system,

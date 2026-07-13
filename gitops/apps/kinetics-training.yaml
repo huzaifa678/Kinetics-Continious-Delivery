@@ -1,3 +1,4 @@
+---
 # The training job, from the in-repo Helm chart. MANUAL sync by default so a git
 # push never silently launches a GPU run (the PyTorchJob only consumes GPUs when
 # HyperPod GPU nodes exist). Standalone (not in the ApplicationSet) for this reason.

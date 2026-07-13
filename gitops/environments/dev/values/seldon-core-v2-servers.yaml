@@ -1,3 +1,4 @@
+---
 # Seldon Core v2 stock servers. Keep one MLServer (useful for smoke-testing the
 # mesh with a trivial model); drop Triton — unused here and it costs a whole
 # StatefulSet. The CNN-LSTM action recognizer runs on a CUSTOM MLServer Server

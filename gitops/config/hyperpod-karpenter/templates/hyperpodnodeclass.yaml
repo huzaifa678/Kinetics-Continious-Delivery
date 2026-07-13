@@ -1,3 +1,4 @@
+---
 apiVersion: karpenter.sagemaker.amazonaws.com/v1
 kind: HyperpodNodeClass
 metadata:

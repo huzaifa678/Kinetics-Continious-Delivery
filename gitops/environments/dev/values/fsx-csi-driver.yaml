@@ -1,3 +1,4 @@
+---
 # No environment-specific values for the FSx CSI driver on dev.
 # This file exists because the ApplicationSet references it via $values valueFiles.
 {}

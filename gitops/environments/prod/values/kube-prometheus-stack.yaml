@@ -1,3 +1,4 @@
+---
 # kube-prometheus-stack Helm values for the PROD cluster.
 
 # --- AWS Managed Prometheus (AMP) remote_write (hybrid observability) ---

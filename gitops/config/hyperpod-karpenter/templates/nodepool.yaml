@@ -1,3 +1,4 @@
+---
 apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:
