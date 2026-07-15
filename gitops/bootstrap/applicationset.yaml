@@ -62,8 +62,13 @@ spec:
             # so a cluster whose env has no overlay (e.g. test) falls back to chart
             # defaults instead of erroring.
             ignoreMissingValueFiles: true
+            # Base (hand-authored) then generated (terraform contract) -- later
+            # wins. generated/<app>.yaml is rendered by
+            # scripts/render-generated-values.py from the SSM gitops-contract and
+            # is absent for apps with no template (ignoreMissingValueFiles).
             valueFiles:
               - '$values/gitops/environments/{{ .metadata.labels.environment }}/values/{{ .path.basename }}.yaml'
+              - '$values/gitops/environments/{{ .metadata.labels.environment }}/values/generated/{{ .path.basename }}.yaml'
         - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
           targetRevision: main
           ref: values

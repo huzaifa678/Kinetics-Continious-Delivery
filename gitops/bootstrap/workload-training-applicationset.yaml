@@ -1,0 +1,66 @@
+---
+# Training workload, wrapped in a clusters-generator ApplicationSet so it
+# resolves its environment from the cluster's `environment` label (dev and prod
+# are SEPARATE clusters, each its own ArgoCD reading `main` -- a static
+# Application could not tell which env it is, so it could not pick the right
+# generated/ values file). Replaces the old static gitops/apps/kinetics-training.yaml.
+#
+# MANUAL sync (no automated block): a git push must never silently launch a GPU
+# run. The PyTorchJob only consumes GPUs when HyperPod GPU nodes exist.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kinetics-training
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            argocd.argoproj.io/secret-type: cluster
+  # ArgoCD Image Updater is installed on DEV ONLY. Render its annotations only on
+  # the dev cluster so a future prod install can never start auto-bumping prod --
+  # prod image tags move exclusively via the gated update-gitops workflow. When
+  # environment != dev the patch is empty (a no-op).
+  templatePatch: |
+    {{- if eq .metadata.labels.environment "dev" }}
+    metadata:
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: training=533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+        argocd-image-updater.argoproj.io/training.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/training.allow-tags: regexp:^sha-
+        argocd-image-updater.argoproj.io/training.helm.image-name: image.repository
+        argocd-image-updater.argoproj.io/training.helm.image-tag: image.tag
+        argocd-image-updater.argoproj.io/write-back-method: git
+        argocd-image-updater.argoproj.io/git-branch: main
+        argocd-image-updater.argoproj.io/write-back-target: helmvalues:/helm/training-job/values.yaml
+    {{- end }}
+  template:
+    metadata:
+      name: kinetics-training
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      sources:
+        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+          targetRevision: main
+          path: helm/training-job
+          helm:
+            ignoreMissingValueFiles: true
+            # Base (image tag, hyperparams) then generated (checkpoint bucket +
+            # MLflow ARN from the terraform contract) -- later wins.
+            valueFiles:
+              - values.yaml
+              - $values/gitops/environments/{{ .metadata.labels.environment }}/values/generated/training-job.yaml
+        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: '{{ .server }}'
+        namespace: training
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true

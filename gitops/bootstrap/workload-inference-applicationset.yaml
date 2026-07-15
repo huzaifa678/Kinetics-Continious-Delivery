@@ -1,0 +1,65 @@
+---
+# Inference workload, wrapped in a clusters-generator ApplicationSet for the same
+# reason as training: env resolves from the cluster label so it picks the right
+# generated/ values (model bucket in both envs; the prod-only public edge --
+# internet-facing ALB + WAF + Cognito -- via inference-service-edge.yaml, which is
+# absent in dev). Replaces the old static gitops/apps/kinetics-inference.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kinetics-inference
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            argocd.argoproj.io/secret-type: cluster
+  # ArgoCD Image Updater is installed on DEV ONLY -- annotations render only on
+  # the dev cluster (see workload-training-applicationset.yaml). Prod tags move
+  # via the gated update-gitops workflow. Empty patch when environment != dev.
+  templatePatch: |
+    {{- if eq .metadata.labels.environment "dev" }}
+    metadata:
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: serve=533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+        argocd-image-updater.argoproj.io/serve.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/serve.allow-tags: regexp:^serve-
+        argocd-image-updater.argoproj.io/serve.helm.image-name: image.repository
+        argocd-image-updater.argoproj.io/serve.helm.image-tag: image.tag
+        argocd-image-updater.argoproj.io/write-back-method: git
+        argocd-image-updater.argoproj.io/git-branch: main
+        argocd-image-updater.argoproj.io/write-back-target: helmvalues:/helm/inference-service/values.yaml
+    {{- end }}
+  template:
+    metadata:
+      name: kinetics-inference
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      sources:
+        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+          targetRevision: main
+          path: helm/inference-service
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - values.yaml
+              - $values/gitops/environments/{{ .metadata.labels.environment }}/values/generated/inference-service.yaml
+              - $values/gitops/environments/{{ .metadata.labels.environment }}/values/generated/inference-service-edge.yaml
+        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: '{{ .server }}'
+        namespace: inference
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - SkipDryRunOnMissingResource=true
