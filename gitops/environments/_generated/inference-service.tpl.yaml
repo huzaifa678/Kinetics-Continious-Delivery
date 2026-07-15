@@ -1,0 +1,5 @@
+---
+# The model artifact the inference initContainer pulls from S3 (local mode).
+# Same checkpoint bucket the trainer writes to, so it tracks per-env/account.
+model:
+  s3Uri: "s3://${checkpoint_bucket}/cnn-lstm/model/"

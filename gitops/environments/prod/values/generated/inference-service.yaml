@@ -1,0 +1,17 @@
+# =============================================================================
+# GENERATED FILE -- DO NOT EDIT.
+#
+# Rendered from the GitOps contract published by terraform/infra/gitops-contract.tf
+# (SSM parameter /kinetics-pipeline/prod/gitops-contract) by
+# scripts/render-generated-values.py.
+#
+# Hand edits are overwritten by the next render-and-PR run. Change the template
+# at gitops/environments/_generated/inference-service.tpl.yaml instead, or change the Terraform output that feeds it.
+#
+# Environment: prod
+# =============================================================================
+---
+# The model artifact the inference initContainer pulls from S3 (local mode).
+# Same checkpoint bucket the trainer writes to, so it tracks per-env/account.
+model:
+  s3Uri: "s3://kinetics-pipeline-prod-checkpoints-533267178572/cnn-lstm/model/"

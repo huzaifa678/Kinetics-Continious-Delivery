@@ -1,0 +1,11 @@
+---
+# AMP remote_write endpoint comes from the GitOps contract (terraform
+# module.observability). Layered OVER environments/<env>/values/kube-prometheus-stack.yaml
+# by the kinetics-platform ApplicationSet, so it can never drift from the
+# workspace terraform actually created.
+prometheus:
+  prometheusSpec:
+    remoteWrite:
+      - url: "${amp_remote_write_url}"
+        sigv4:
+          region: "${region}"

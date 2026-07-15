@@ -1,0 +1,9 @@
+---
+# checkpoint.s3Uri is the spot-safe checkpoint target train.py writes to every
+# `everySteps`; contract-driving it stops a prod run from checkpointing into the
+# dev bucket. mlflowTrackingUri is "" when MLflow is disabled for the env, which
+# the trainer treats as "tracking off".
+checkpoint:
+  s3Uri: "s3://${checkpoint_bucket}/cnn-lstm/"
+tracking:
+  mlflowTrackingUri: "${mlflow_tracking_server_arn}"

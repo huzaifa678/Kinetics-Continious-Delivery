@@ -1,0 +1,21 @@
+# =============================================================================
+# GENERATED FILE -- DO NOT EDIT.
+#
+# Rendered from the GitOps contract published by terraform/infra/gitops-contract.tf
+# (SSM parameter /kinetics-pipeline/prod/gitops-contract) by
+# scripts/render-generated-values.py.
+#
+# Hand edits are overwritten by the next render-and-PR run. Change the template
+# at gitops/environments/_generated/training-job.tpl.yaml instead, or change the Terraform output that feeds it.
+#
+# Environment: prod
+# =============================================================================
+---
+# checkpoint.s3Uri is the spot-safe checkpoint target train.py writes to every
+# `everySteps`; contract-driving it stops a prod run from checkpointing into the
+# dev bucket. mlflowTrackingUri is "" when MLflow is disabled for the env, which
+# the trainer treats as "tracking off".
+checkpoint:
+  s3Uri: "s3://kinetics-pipeline-prod-checkpoints-533267178572/cnn-lstm/"
+tracking:
+  mlflowTrackingUri: "arn:aws:sagemaker:us-east-1:533267178572:mlflow-tracking-server/kinetics-pipeline-prod-mlflow"

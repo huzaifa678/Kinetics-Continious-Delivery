@@ -1,0 +1,23 @@
+# =============================================================================
+# GENERATED FILE -- DO NOT EDIT.
+#
+# Rendered from the GitOps contract published by terraform/infra/gitops-contract.tf
+# (SSM parameter /kinetics-pipeline/prod/gitops-contract) by
+# scripts/render-generated-values.py.
+#
+# Hand edits are overwritten by the next render-and-PR run. Change the template
+# at gitops/environments/_generated/kube-prometheus-stack.tpl.yaml instead, or change the Terraform output that feeds it.
+#
+# Environment: prod
+# =============================================================================
+---
+# AMP remote_write endpoint comes from the GitOps contract (terraform
+# module.observability). Layered OVER environments/<env>/values/kube-prometheus-stack.yaml
+# by the kinetics-platform ApplicationSet, so it can never drift from the
+# workspace terraform actually created.
+prometheus:
+  prometheusSpec:
+    remoteWrite:
+      - url: "https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-prod/api/v1/remote_write"
+        sigv4:
+          region: "us-east-1"

@@ -1,0 +1,18 @@
+# gitops-render-envs: prod
+---
+# PROD-ONLY public edge for the inference API: internet-facing ALB + WAF, docs
+# off, CORS locked to the SPA origin, Cognito JWT auth. All values come from the
+# GitOps contract (WAF ARN + Cognito client ids regenerate with terraform, so
+# they must not be hand-copied). Dev keeps the internal posture from its base
+# values file and this overlay is simply absent (ignoreMissingValueFiles).
+ingress:
+  enabled: true
+  scheme: internet-facing
+  host: "${inference_api_host}"
+  wafAclArn: "${inference_api_waf_arn}"
+app:
+  enableDocs: "false"
+  corsAllowOrigins: "${spa_url}"
+  cognito:
+    issuer: "${cognito_issuer}"
+    audience: "${cognito_spa_client_id},${cognito_machine_client_id}"
