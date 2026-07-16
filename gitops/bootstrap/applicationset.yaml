@@ -78,7 +78,15 @@ spec:
           selfHeal: true
         syncOptions:
           - CreateNamespace=true
-          - ServerSideApply=true
+          # ServerSideApply defaults ON, disableable per catalog entry
+          # (`serverSideApply: false` in the app.yaml -> renders
+          # `ServerSideApply=false` = client-side). Seldon Core v2 setup/runtime/
+          # servers charts render optional CR fields as explicit `null` (e.g.
+          # SeldonConfig.components[].annotations, SeldonRuntime.overrides[].podSpec,
+          # Server.spec.podSpec); SSA rejects those nulls at admission ("must be of
+          # type object: null"), while client-side apply prunes them on create.
+          # crds stays ON (big CRDs exceed the client-side last-applied limit).
+          - 'ServerSideApply={{ dig "serverSideApply" "true" . }}'
           # Multi-chart bundles (e.g. Seldon Core v2: crds -> setup -> runtime ->
           # servers) install out of order under independent auto-sync; this lets
           # the dependent apps apply + self-heal instead of erroring on the not-
