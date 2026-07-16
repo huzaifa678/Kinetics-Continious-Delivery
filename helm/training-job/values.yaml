@@ -2,7 +2,7 @@
 # Training image: build from docker/ (PyTorch + pytorchvideo + your code).
 image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: sha-1b1fcae
+  tag: sha-1297c9f
   pullPolicy: IfNotPresent
 # Distributed config. nprocPerNode should match GPUs per node.
 # Centralized distributed setup: set these two numbers and everything derives —
