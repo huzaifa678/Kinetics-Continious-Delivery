@@ -31,10 +31,10 @@ security:
         # keyPath/crtPath defaults are unused.
         endpointIdentificationAlgorithm: https
 kafka:
-  # REPLACE with `terraform -chdir=terraform/infra output -raw msk_bootstrap_brokers_sasl_scram`
-  # (the :9096 SASL/SCRAM listener). Left as a loud placeholder so an unwired sync
-  # fails fast instead of silently pointing at the chart's in-cluster default.
-  bootstrap: REPLACE_WITH_MSK_SASL_SCRAM_BOOTSTRAP:9096
+  # MSK SASL/SCRAM :9096 listener (terraform output msk_bootstrap_brokers_sasl_scram).
+  # Non-secret broker DNS (VPC-internal); the SCRAM password is delivered separately
+  # by External Secrets. Update if the MSK cluster is recreated (brokers change).
+  bootstrap: b-1.kineticspipelineprod.rgj8mi.c23.kafka.us-east-1.amazonaws.com:9096,b-2.kineticspipelineprod.rgj8mi.c23.kafka.us-east-1.amazonaws.com:9096
   topics:
     replicationFactor: 2 # prod MSK has 2 brokers (az_count=2); RF>1 for durability
     numPartitions: 1

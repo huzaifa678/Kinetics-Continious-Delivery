@@ -10,3 +10,6 @@ namespace: seldon-mesh
 chartRepoURL: https://seldonio.github.io/helm-charts/
 chartName: seldon-core-v2-runtime
 chartVersion: "2.10.2"
+# Chart renders SeldonRuntime.overrides[].podSpec and spec.config.* as `null`,
+# which ServerSideApply rejects at admission. Client-side apply prunes them.
+serverSideApply: false
