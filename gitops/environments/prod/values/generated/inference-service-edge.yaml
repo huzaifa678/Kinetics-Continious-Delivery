@@ -20,11 +20,11 @@
 ingress:
   enabled: true
   scheme: internet-facing
-  host: "api.kinetics.example.com"
-  wafAclArn: "arn:aws:wafv2:us-east-1:533267178572:regional/webacl/inference-api/abc"
+  host: "api.freeeasycrypto.com"
+  wafAclArn: "arn:aws:wafv2:us-east-1:533267178572:regional/webacl/kinetics-pipeline-prod-api-waf/64ac1b71-b98b-426a-93b8-54e44f980b00"
 app:
   enableDocs: "false"
-  corsAllowOrigins: "https://app.kinetics.example.com"
+  corsAllowOrigins: "https://d7mkqb42bugft.cloudfront.net"
   cognito:
-    issuer: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_ABC"
-    audience: "spaclient123,machineclient456"
+    issuer: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Mu4Gx86oX"
+    audience: "dctrdch4a4mnejljdn40207pg,3cjl8tkrnguhc925roclbiq6ao"

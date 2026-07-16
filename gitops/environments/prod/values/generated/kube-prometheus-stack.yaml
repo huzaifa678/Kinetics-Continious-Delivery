@@ -18,6 +18,6 @@
 prometheus:
   prometheusSpec:
     remoteWrite:
-      - url: "https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-prod/api/v1/remote_write"
+      - url: "https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-28629c1c-d45f-4939-b51b-21fa65d1f423/api/v1/remote_write"
         sigv4:
           region: "us-east-1"
