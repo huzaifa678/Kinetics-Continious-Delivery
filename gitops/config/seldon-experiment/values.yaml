@@ -10,7 +10,7 @@ namespace: seldon-mesh
 # convention as the training and inference charts.
 image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: seldon-1b1fcae
+  tag: seldon-1297c9f
 # Custom MLServer server running the KineticsRuntime (uses .image above).
 server:
   name: kinetics-mlserver
