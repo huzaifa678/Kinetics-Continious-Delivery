@@ -104,9 +104,12 @@ package manifests
 	targetRevision: string
 	chart?: string
 	path?:  string
+	ref?:   string
 	helm?: {
+		ignoreMissingValueFiles?: bool
 		valueFiles?: [...string]
 		parameters?: [...{name: string, value: string}]
+		releaseName?: string
 	}
 }
 
@@ -221,9 +224,135 @@ package manifests
 	}
 }
 
+// ── Core v1 ─────────────────────────────────────────────────────────────────
+
+// ServiceAccount: used by the etl-shards chart (IRSA/Pod-Identity binding).
+#ServiceAccount: {
+	apiVersion: "v1"
+	kind:       "ServiceAccount"
+	metadata:   #ObjectMeta
+	automountServiceAccountToken?: bool
+}
+
+
+
+
+// WorkflowTemplate: a reusable, versioned workflow spec managed by ArgoCD.
+// Runs are spawned via `argo submit --from workflowtemplate/<name>` — the
+// template itself is never mutated by a run, so ArgoCD can reconcile it safely.
+#WorkflowTemplate: {
+	apiVersion: "argoproj.io/v1alpha1"
+	kind:       "WorkflowTemplate"
+	metadata:   #ObjectMeta
+	spec:       #WorkflowSpec
+}
+
+// Workflow: a single execution instance (created by `argo submit`).
+// Not managed by ArgoCD directly, but included so rendered manifests
+// can be validated if needed.
+#Workflow: {
+	apiVersion: "argoproj.io/v1alpha1"
+	kind:       "Workflow"
+	metadata:   #ObjectMeta
+	spec:       #WorkflowSpec
+}
+
+#WorkflowSpec: {
+	entrypoint:          string
+	serviceAccountName?: string
+	parallelism?:        int & >=1
+	podGC?: {
+		strategy: "OnWorkflowCompletion" | "OnWorkflowSuccess" | "OnPodCompletion" | "OnPodSuccess"
+	}
+	retryStrategy?: #RetryStrategy
+	templates: [...#WorkflowTemplate_Template] & [_, ...]
+	// Free-form fields (volumes, nodeSelector, tolerations, etc.)
+	...
+}
+
+#RetryStrategy: {
+	limit:        string | int
+	retryPolicy?: "Always" | "OnFailure" | "OnError" | "OnTransientError"
+	backoff?: {
+		duration?:    string
+		factor?:      string | int
+		maxDuration?: string
+	}
+}
+
+#WorkflowTemplate_Template: {
+	name: string
+	// A template is one of: steps, dag, container, script, resource, suspend.
+	// Only the shapes used by etl-shards are constrained; others are open ({...}).
+	steps?: [...[...#WorkflowStep]]
+	dag?: {tasks: [...#DAGTask] & [_, ...]}
+	container?: #WorkflowContainer
+	inputs?: {
+		parameters?: [...{name: string, value?: string}]
+		artifacts?: [...{...}]
+	}
+	outputs?: {
+		parameters?: [...{...}]
+		artifacts?: [...{...}]
+	}
+	podSpecPatch?: string
+	securityContext?: {...}
+	nodeSelector?: {[string]: string}
+	tolerations?: [...{...}]
+	volumes?: [...{name: string, ...}]
+	retryStrategy?: #RetryStrategy
+	metadata?: {labels?: {[string]: string}, annotations?: {[string]: string}}
+	...
+}
+
+#WorkflowStep: {
+	name:      string
+	template:  string
+	arguments?: {
+		parameters?: [...{name: string, value: string}]
+		artifacts?: [...{...}]
+	}
+	withSequence?: {
+		count?:  string | int
+		start?:  string | int
+		end?:    string | int
+		format?: string
+	}
+	withItems?: [..._]
+	when?: string
+	...
+}
+
+#DAGTask: {
+	name:         string
+	template:     string
+	dependencies?: [...string]
+	arguments?: {
+		parameters?: [...{name: string, value: string}]
+	}
+	...
+}
+
+#WorkflowContainer: {
+	image:            string & =~":"
+	imagePullPolicy?: "Always" | "IfNotPresent" | "Never"
+	command?: [...string]
+	args?: [...string]
+	env?: [...{name: string, value?: string, valueFrom?: {...}}]
+	resources?: {
+		limits?:   {[string]: string | int}
+		requests?: {[string]: string | int}
+	}
+	volumeMounts?: [...{name: string, mountPath: string, ...}]
+	securityContext?: {...}
+	...
+}
+
+
 #Resource: #HyperPodPyTorchJob |
 	#PersistentVolume |
 	#PersistentVolumeClaim |
+	#ServiceAccount |
 	#Application |
 	#ApplicationSet |
 	#NodePool |
@@ -231,4 +360,6 @@ package manifests
 	#HyperpodNodeClass |
 	#SeldonServer |
 	#SeldonModel |
-	#SeldonExperiment
+	#SeldonExperiment |
+	#WorkflowTemplate |
+	#Workflow
