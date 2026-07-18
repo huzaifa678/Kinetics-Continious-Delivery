@@ -1,0 +1,2 @@
+---
+outputS3: s3://${data_bucket}/kinetics400/shards/train
