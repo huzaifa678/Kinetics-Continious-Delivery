@@ -55,10 +55,11 @@ echo "==> Linting in-repo inference-service chart"
 helm lint "$ROOT/helm/inference-service"
 helm lint "$ROOT/helm/inference-service" --set seldon.enabled=false
 
-# The etl-shards chart emits a standard batch/v1 Job (+ ServiceAccount) — helm
-# lint, not the CUE CRD schema.
-echo "==> Linting in-repo etl-shards chart"
-helm lint "$ROOT/helm/etl-shards"
+# The etl-shards chart now emits an Argo WorkflowTemplate (+ ServiceAccount).
+# Render and vet it against #Resource (which includes #WorkflowTemplate).
+echo "==> Rendering + vetting in-repo etl-shards chart"
+helm template etl-shards "$ROOT/helm/etl-shards" > "$TMP/render-etl-shards.yaml"
+vet "$TMP/render-etl-shards.yaml"
 
 echo "==> Vetting bootstrap ApplicationSet + standalone Applications"
 for f in "$ROOT"/gitops/bootstrap/*.yaml "$ROOT"/gitops/apps/*.yaml; do
