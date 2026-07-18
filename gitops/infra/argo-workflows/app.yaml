@@ -1,0 +1,11 @@
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# Argo Workflows — DAG-based workflow engine. Runs the ETL WorkflowTemplate
+# (helm/etl-shards) that fans out kinetics-build-shards across N shards in
+# parallel. The WorkflowTemplate itself is deployed by the etl-shards ArgoCD
+# Application (gitops/apps/etl-shards.yaml, manual sync).
+# Env values: environments/<env>/values/argo-workflows.yaml
+name: argo-workflows
+namespace: argo
+chartRepoURL: https://argoproj.github.io/argo-helm
+chartName: argo-workflows
+chartVersion: "0.45.19"
