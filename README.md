@@ -136,6 +136,81 @@ observability wiring consumed by the trainer:
   Empty ⇒ the trainer's OpenTelemetry tracer is a no-op.
 - `observability.serviceName` / `observability.logLevel`.
 
+## ETL Workflow (Kinetics shard builder)
+
+`helm/etl-shards/` contains an Argo Workflows **WorkflowTemplate** that decodes
+Kinetics-400 clips (from the FSx `/data` mount) into WebDataset shards on S3,
+fanning out `numShards` pods (`parallelism` at a time) — one pod per shard.
+
+### How it fits the platform
+
+| Layer | What it does |
+|---|---|
+| `gitops/infra/argo-workflows/` | Installs the Argo Workflows controller + CRDs (auto-sync via the ApplicationSet) |
+| `helm/etl-shards/` | Helm chart that renders `WorkflowTemplate/etl-shards-build` + `ServiceAccount/etl-shards` |
+| `gitops/apps/etl-shards.yaml` | **Manual-sync** ArgoCD Application — reconciles the WorkflowTemplate spec |
+| `gitops/environments/<env>/values/etl-shards.yaml` | Per-env overrides: S3 output path, parallelism, IRSA role ARN |
+
+ArgoCD owns the *spec* (WorkflowTemplate). A human or CI step owns the *run*
+(`argo submit`). A git push **never** silently starts an ETL run.
+
+### Running the ETL
+
+```bash
+# 1. Dry-run: inspect the rendered WorkflowTemplate for the target env
+make etl-render              # dev (default)
+make etl-render ETL_ENV=prod
+
+# 2. ArgoCD must have synced the etl-shards Application at least once
+#    (it installs the WorkflowTemplate CRD + spec). Do that from the UI or:
+argocd app sync etl-shards
+
+# 3. Submit a run (kubeconfig must point at the right cluster)
+make etl-run                      # dev, fires and returns
+make etl-run ETL_ENV=prod
+make etl-run ARGO_FLAGS="--watch" # stream step-by-step progress
+```
+
+### Fan-out pattern
+
+The WorkflowTemplate uses a `withSequence` loop (items `0..numShards-1`) — the
+direct Argo equivalent of the old indexed Job's `JOB_COMPLETION_INDEX`. Each
+iteration calls the `build-one-shard` template with `--shard-id {{item}}`.
+
+```
+WorkflowTemplate/etl-shards-build
+└── steps: build-shards
+    └── withSequence count=64
+        └── build-one-shard  (pod, parallelism=8)
+            └── kinetics-build-shards --shard-id N
+```
+
+### Changing ETL parameters
+
+Edit `helm/etl-shards/values.yaml` (global defaults) or the per-env overlay
+(`gitops/environments/<env>/values/etl-shards.yaml`) and push. ArgoCD will pick
+up the change on the next manual sync of `etl-shards`. Parameters that changed
+only affect the *next* `argo submit` — running workflows are unaffected.
+
+### IRSA role
+
+The `etl-shards` ServiceAccount needs write access to the output S3 prefix.
+After Terraform creates the role:
+
+```bash
+terraform output kinetics_etl_shards_role_arn
+# → arn:aws:iam::533267178572:role/kinetics-etl-shards-dev
+```
+
+Add it to the env overlay:
+
+```yaml
+# gitops/environments/dev/values/etl-shards.yaml
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::533267178572:role/kinetics-etl-shards-dev
+```
+
 ## Validation
 
 ```bash
