@@ -1,0 +1,107 @@
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Values.namespace }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+---
+{{- end }}
+# Actual runs are triggered imperatively:
+# argo submit --from workflowtemplate/etl-shards-build -n argo
+# `make etl-run`. Re-runs are free: the template is never mutated.
+# Fan-out: a withSequence loop creates one pod per shard (0..numShards-1),
+# with `parallelism` pods running at a time — mirrors the old indexed Job.
+# Each pod runs kinetics-build-shards with --shard-id {{`{{item}}`}}.
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: etl-shards-build
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: etl-shards
+    app.kubernetes.io/component: etl
+spec:
+  # Garbage-collect completed pods after this window. Keeps the cluster tidy
+  # while still letting `argo logs` reach recent runs.
+  podGC:
+    strategy: OnWorkflowCompletion
+  serviceAccountName: {{ .Values.serviceAccount.name }}
+  # Cap concurrent shard pods — mirrors the old Job `parallelism`.
+  parallelism: {{ .Values.parallelism }}
+  # Retry failed shard steps before failing the whole workflow.
+  retryStrategy:
+    limit: {{ .Values.backoffLimit | quote }}
+    retryPolicy: OnFailure
+  templates:
+    - name: build-shards
+      # withSequence emits items "0", "1", … "numShards-1". The loop is the
+      # direct analogue of the indexed Job's JOB_COMPLETION_INDEX env var.
+      steps:
+        - - name: shard
+            template: build-one-shard
+            arguments:
+              parameters:
+                - name: shardId
+                  value: "{{`{{item}}`}}"
+            withSequence:
+              count: {{ .Values.numShards | quote }}
+
+    - name: build-one-shard
+      inputs:
+        parameters:
+          - name: shardId
+      metadata:
+        labels:
+          app.kubernetes.io/name: etl-shards
+          app.kubernetes.io/component: shard-worker
+      podSpecPatch: |
+        automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: dataset
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.fsxClaimName }}
+        - name: tmp
+          emptyDir: {}
+      container:
+        name: build-shards
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        command: ["sh", "-lc"]
+        args:
+          - >-
+            kinetics-build-shards
+            --manifest {{ .Values.manifest }}
+            --output {{ .Values.outputS3 }}
+            --num-shards {{ .Values.numShards }}
+            --shard-id "{{`{{inputs.parameters.shardId}}`}}"
+            --clip-length {{ .Values.clipLength }}
+            --resize {{ .Values.resize }}
+        volumeMounts:
+          - name: dataset
+            mountPath: {{ .Values.data.mountPath }}
+          - name: tmp
+            mountPath: /tmp
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+  # The entry point when this template is submitted as a Workflow.
+  entrypoint: build-shards

@@ -1,8 +1,11 @@
----
 image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
   tag: sha-latest
   pullPolicy: Always      # moving tag (sha-latest) → always pull the current build
+
+# Namespace where both the ServiceAccount and WorkflowTemplate live.
+# Must match the Argo Workflows controller namespace (default: argo).
+namespace: argo
 
 numShards: 64
 parallelism: 8

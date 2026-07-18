@@ -2,10 +2,11 @@
 apiVersion: v2
 name: etl-shards
 description: >-
-  On-demand Kubernetes indexed Job that runs kinetics-build-shards: decodes the
+  Argo Workflows WorkflowTemplate that runs kinetics-build-shards: decodes the
   Kinetics clips (from the FSx /data mount) into WebDataset shards on S3, in
-  parallel. Run-once batch op — render + apply when the dataset changes; not an
-  auto-synced ArgoCD app (Jobs are immutable).
+  parallel using a withSequence fan-out. ArgoCD (manual sync) reconciles the
+  WorkflowTemplate spec; actual runs are triggered via `argo submit` or
+  `make etl-run` — a git push never silently starts an ETL run.
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
