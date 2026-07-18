@@ -1,0 +1,6 @@
+parallelism: 8
+
+serviceAccount:
+  create: true
+  name: etl-shards
+  annotations: {}

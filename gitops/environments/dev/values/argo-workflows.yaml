@@ -1,0 +1,13 @@
+# Argo Workflows controller — dev. Single replica, lightweight footprint.
+# The server UI is exposed only internally (no ingress on dev).
+controller:
+  replicas: 1
+
+server:
+  # Expose the Argo Workflows UI inside the cluster only on dev.
+  # Port-forward to access: kubectl port-forward svc/argo-workflows-server 2746 -n argo
+  secure: false
+
+# Workflow archive uses the in-cluster PostgreSQL sidecar by default.
+# Set to false to disable persistence (workflows listed from etcd only).
+useStatefulSetFiles: false

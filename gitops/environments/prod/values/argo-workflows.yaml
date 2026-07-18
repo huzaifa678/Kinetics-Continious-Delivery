@@ -1,0 +1,8 @@
+# Argo Workflows controller — prod. HA: two replicas with leader election.
+controller:
+  replicas: 2
+
+server:
+  secure: false
+
+useStatefulSetFiles: false
