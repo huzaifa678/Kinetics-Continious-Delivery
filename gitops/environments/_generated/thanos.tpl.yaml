@@ -1,0 +1,16 @@
+---
+# Thanos S3 objstore — bucket name + region come from the GitOps contract
+# (terraform/infra/gitops-contract.tf publishes `thanos_bucket`; the storage
+# module creates it, the `<name>-thanos` IAM role scopes access to it). Layered
+# OVER environments/<env>/values/thanos.yaml by the ApplicationSet.
+#
+# Auth is `aws_sdk_auth: true` -> Thanos uses the AWS SDK default credential
+# chain, satisfied by the EKS Pod Identity association on ns/SA thanos/thanos.
+# No access keys in git.
+objstoreConfig: |-
+  type: s3
+  config:
+    bucket: "${thanos_bucket}"
+    endpoint: "s3.${region}.amazonaws.com"
+    region: "${region}"
+    aws_sdk_auth: true

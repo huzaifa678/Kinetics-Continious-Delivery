@@ -1,0 +1,59 @@
+---
+# Thanos — DEV. Same topology as prod, trimmed retention/persistence for cost.
+# S3 objstore comes from values/generated/thanos.yaml (bucket from the contract).
+
+fullnameOverride: thanos
+
+receive:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: true
+    name: thanos
+  tsdbRetention: 7d
+  persistence:
+    enabled: true
+    size: 10Gi
+
+storegateway:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: false
+    name: thanos
+  persistence:
+    enabled: true
+    size: 10Gi
+
+compactor:
+  enabled: true
+  serviceAccount:
+    create: false
+    name: thanos
+  retentionResolutionRaw: 15d
+  retentionResolution5m: 30d
+  retentionResolution1h: 90d
+  persistence:
+    enabled: true
+    size: 10Gi
+
+query:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: true
+    name: thanos-query
+  dnsDiscovery:
+    enabled: true
+  stores:
+    - dnssrv+_grpc._tcp.thanos-receive.thanos.svc.cluster.local
+    - dnssrv+_grpc._tcp.thanos-storegateway.thanos.svc.cluster.local
+
+queryFrontend:
+  enabled: false
+ruler:
+  enabled: false
+bucketweb:
+  enabled: false
+minio:
+  enabled: false

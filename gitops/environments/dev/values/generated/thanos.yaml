@@ -1,0 +1,28 @@
+# =============================================================================
+# GENERATED FILE -- DO NOT EDIT.
+#
+# Rendered from the GitOps contract published by terraform/infra/gitops-contract.tf
+# (SSM parameter /kinetics-pipeline/dev/gitops-contract) by
+# scripts/render-generated-values.py.
+#
+# Hand edits are overwritten by the next render-and-PR run. Change the template
+# at gitops/environments/_generated/thanos.tpl.yaml instead, or change the Terraform output that feeds it.
+#
+# Environment: dev
+# =============================================================================
+---
+# Thanos S3 objstore — bucket name + region come from the GitOps contract
+# (terraform/infra/gitops-contract.tf publishes `thanos_bucket`; the storage
+# module creates it, the `<name>-thanos` IAM role scopes access to it). Layered
+# OVER environments/<env>/values/thanos.yaml by the ApplicationSet.
+#
+# Auth is `aws_sdk_auth: true` -> Thanos uses the AWS SDK default credential
+# chain, satisfied by the EKS Pod Identity association on ns/SA thanos/thanos.
+# No access keys in git.
+objstoreConfig: |-
+  type: s3
+  config:
+    bucket: "kinetics-pipeline-dev-thanos-533267178572"
+    endpoint: "s3.us-east-1.amazonaws.com"
+    region: "us-east-1"
+    aws_sdk_auth: true

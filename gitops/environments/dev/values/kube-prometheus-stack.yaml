@@ -25,3 +25,12 @@ grafana:
       uid: tempo
       access: proxy
       url: http://tempo.observability:3200
+    # Thanos Query — the durable/long-term metrics view (S3-backed, fans out over
+    # Receive + Store). Default datasource so dashboards read long-term history,
+    # not just the in-cluster Prometheus's local TSDB.
+    - name: Thanos
+      type: prometheus
+      uid: thanos
+      access: proxy
+      isDefault: true
+      url: http://thanos-query.thanos.svc.cluster.local:9090

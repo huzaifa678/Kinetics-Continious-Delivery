@@ -1,0 +1,73 @@
+---
+fullnameOverride: thanos
+
+receive:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: true
+    name: thanos
+  # tsdb block retention on the receiver's local disk before upload/compaction.
+  tsdbRetention: 15d
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { cpu: "1", memory: 1Gi }
+
+storegateway:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: false
+    name: thanos
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { cpu: "1", memory: 1Gi }
+
+# COMPACTOR — compacts + downsamples S3 blocks, enforces retention. Reuses `thanos` SA.
+compactor:
+  enabled: true
+  serviceAccount:
+    create: false
+    name: thanos
+  retentionResolutionRaw: 30d
+  retentionResolution5m: 90d
+  retentionResolution1h: 1y
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+# QUERY — fan-out read layer (Grafana datasource). No S3 access, so its own SA.
+query:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: true
+    name: thanos-query
+  dnsDiscovery:
+    enabled: true
+  # Receive + Store aren't Prometheus sidecars, so add their gRPC endpoints explicitly.
+  stores:
+    - dnssrv+_grpc._tcp.thanos-receive.thanos.svc.cluster.local
+    - dnssrv+_grpc._tcp.thanos-storegateway.thanos.svc.cluster.local
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+# Lean footprint: no query-frontend / ruler / bucketweb / bundled minio.
+queryFrontend:
+  enabled: false
+ruler:
+  enabled: false
+bucketweb:
+  enabled: false
+minio:
+  enabled: false

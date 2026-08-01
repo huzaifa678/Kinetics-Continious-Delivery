@@ -21,3 +21,9 @@ prometheus:
       - url: "https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-dev/api/v1/remote_write"
         sigv4:
           region: "us-east-1"
+      # MIGRATION: second target = in-cluster Thanos Receive (durable long-term
+      # store on S3, the successor to AMP — see gitops/observability/thanos).
+      # Prometheus ships to BOTH during the cutover. Once Thanos is verified
+      # Synced+Healthy and queryable, delete the AMP target above (and flip
+      # enable_managed_prometheus=false in terraform) to finish the replacement.
+      - url: http://thanos-receive.thanos.svc.cluster.local:19291/api/v1/receive
