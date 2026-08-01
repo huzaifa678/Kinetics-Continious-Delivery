@@ -1,6 +1,12 @@
 ---
 provider:
   name: aws
+# Watch Services AND Ingresses — the ArgoCD Ingress (ingressClassName: nginx)
+# publishes the internal NLB hostname in its status; external-dns turns that into
+# the argocd.freeeasycrypto.com record.
+sources:
+  - service
+  - ingress
 policy: upsert-only
 registry: txt
 txtOwnerId: kinetics-pipeline-prod

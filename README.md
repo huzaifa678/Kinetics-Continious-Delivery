@@ -37,11 +37,13 @@ flowchart TB
         dcgm["dcgm-exporter<br/>GPU metrics · ns monitoring"]
         otel["otel-collector<br/>OTLP 4317/4318 · ns observability"]
         tempo["Tempo<br/>traces · ns observability"]
+        thanos["Thanos<br/>Receive+Query+Store+Compactor · ns thanos"]
+        s3thanos[("S3 — thanos bucket<br/>durable long-term metrics")]
     end
 
     train["kinetics-training<br/>HyperPodPyTorchJob<br/>(MANUAL sync)"]
 
-    appset --> ack & fsx & cpukarp & kps & dcgm & otel & tempo
+    appset --> ack & fsx & cpukarp & kps & dcgm & otel & tempo & thanos
     rootapps --> cpucfg & gpucfg & train
 
     %% scaling: two Karpenters, fenced by the GPU taint
@@ -54,6 +56,9 @@ flowchart TB
     %% telemetry flow
     train -->|metrics| kps
     dcgm -->|GPU metrics| kps
+    kps -->|remote_write| thanos
+    thanos -->|blocks| s3thanos
+    thanos -->|datasource| kps
     train -->|OTLP traces| otel
     otel -->|OTLP| tempo
     tempo -->|datasource| kps
@@ -67,9 +72,18 @@ flowchart TB
   (`HyperpodNodeClass`) are each owned by their respective controller via
   `nodeClassRef`; the GPU taint keeps CPU/system pods off GPU nodes so the two scale
   in harmony.
-- **Two telemetry pipelines:** metrics → Prometheus/Grafana; traces → OTel collector
-  → Tempo → Grafana (Prometheus can't store spans). MLflow is the SageMaker-managed
-  server, reached by ARN.
+- **Telemetry pipelines:** metrics → in-cluster Prometheus, `remote_write`ed to
+  **Thanos Receive** for durable long-term storage on S3 (Grafana queries Thanos
+  Query for full history); traces → OTel collector → Tempo → Grafana (Prometheus
+  can't store spans). MLflow is the SageMaker-managed server, reached by ARN.
+- **Metrics durability = Thanos, migrating off AMP.** Thanos Receive is a drop-in
+  `remote_write` target that replaces Amazon Managed Prometheus (AMP). During the
+  cutover, kube-prometheus-stack ships to **both** AMP and Thanos; the AMP target
+  (and `enable_managed_prometheus`/AMG in terraform) is removed once Thanos is
+  verified. The Thanos S3 bucket name is delivered by the GitOps contract (see
+  *Generated values* below); S3 auth is EKS Pod Identity (ns/SA `thanos`/`thanos`).
+- **No log aggregation yet** — logs are the one missing pillar (a Loki backend on
+  the reserved `loki` S3 bucket is a planned follow-up).
 
 ## Layout
 
@@ -86,6 +100,18 @@ gitops/
     ack-sagemaker/          #   ACK SageMaker controller
     karpenter/              #   Karpenter
     fsx-csi-driver/         #   FSx for Lustre CSI driver
+    cert-manager/           #   cert-manager (webhook/CRD certs + ACME issuers)
+    ingress-nginx/          #   internal-NLB ingress controller (fronts ArgoCD UI)
+    aws-load-balancer-controller/ # ALB/NLB Ingress controller
+    external-dns/           #   Route53 record sync for the inference host
+    external-secrets/       #   ESO controller (Secrets Manager → k8s Secrets)
+    argo-rollouts/          #   Argo Rollouts (blue/green inference Rollout)
+    argo-workflows/         #   Argo Workflows controller (ETL shard builder)
+    argocd-image-updater/   #   image-tag bumps (dev; git write-back)
+    seldon-core-v2-crds/    #   Seldon Core v2 CRDs
+    seldon-core-v2-setup/   #   Seldon Core v2 SeldonConfig (Kafka/security base)
+    seldon-core-v2-runtime/ #   Seldon Core v2 runtime (scheduler/gateways/envoy)
+    seldon-core-v2-servers/ #   Seldon Core v2 model servers
     keda/                   #   KEDA — autoscales the FastAPI inference Rollout
                             #   (ScaledObject in helm/inference-service; Prometheus
                             #   trigger, default in-cluster kube-prometheus-stack)
@@ -94,18 +120,27 @@ gitops/
     dcgm-exporter/          #   NVIDIA DCGM GPU metrics (ns monitoring)
     opentelemetry-collector/#   OTLP trace gateway (ns observability)
     tempo/                  #   Grafana Tempo traces backend (ns observability)
-  environments/dev/values/  # the ONLY place env-specific values live:
-                            #   clusterName, region, interruption queue, the
-                            #   training job's MLflow URI + OTel endpoint, and the
+    thanos/                 #   Thanos — durable long-term metrics on S3
+                            #   (Receive+Query+Store+Compactor; ns thanos).
+                            #   S3 bucket from the GitOps contract; replaces AMP.
+  environments/<env>/values/# hand-authored env values (the ONLY place env
+                            #   specifics live): clusterName, region, the training
+                            #   job's MLflow URI + OTel endpoint, Thanos topology,
                             #   collector/Tempo/Grafana-datasource wiring.
+    values/generated/       #   MACHINE-rendered from the GitOps contract — DO NOT
+                            #   EDIT (AMP/Thanos-bucket/etc. from terraform).
+  environments/_generated/  # *.tpl.yaml templates → values/generated/<app>.yaml
   config/
     karpenter/              # in-repo chart: CPU Karpenter NodePool + EC2NodeClass
     hyperpod-karpenter/     # in-repo chart: GPU HyperpodNodeClass + NodePool
                             #   (instanceGroups + GPU taint from values)
+    cert-manager-issuers/   # in-repo chart: Let's Encrypt ClusterIssuers
+                            #   (ACME DNS-01 via Route53; secures the ArgoCD UI)
   apps/                     # standalone Applications:
     karpenter-config.yaml   #   the in-repo CPU Karpenter config chart (auto-sync)
     hyperpod-karpenter.yaml #   the GPU Karpenter config chart (auto-sync; retry +
                             #   SkipDryRunOnMissingResource for CRD ordering)
+    cert-manager-issuers.yaml # the ClusterIssuers config chart (sync-wave 2)
     kinetics-training.yaml  #   the HyperPodPyTorchJob (MANUAL sync — a push must
                             #   never silently launch a GPU run)
 cue/schema.cue              # strict schema every rendered/static manifest is vetted against
@@ -123,6 +158,44 @@ scripts/validate-manifests.sh
    **`kinetics-training`** Application, which is manual-sync.
 3. To launch a training run, scale the HyperPod GPU group up, then sync
    `kinetics-training` (the job only consumes GPUs once GPU nodes exist).
+
+## Accessing the ArgoCD UI
+
+The ArgoCD UI is served at **`https://argocd.freeeasycrypto.com`** over an
+**internal** NLB (`ingress-nginx`), so it's reachable **only on the Client VPN** —
+the GitOps control plane is never exposed to the internet. TLS is a real
+Let's Encrypt cert, issued by the `letsencrypt-dns` **ClusterIssuer** (ACME
+DNS-01 via Route53) and terminated at nginx; `argocd-server` runs in `--insecure`
+mode behind it. The pieces span both repos:
+
+| Piece | Where |
+|---|---|
+| Ingress (host, `ingressClassName: nginx`, TLS, issuer annotation) + `server.insecure` | platform Terraform — `modules/addons` argo-cd Helm values, gated on `argocd_hostname` |
+| `nginx` IngressClass / internal NLB | this repo — `gitops/infra/ingress-nginx` |
+| `letsencrypt-dns` ClusterIssuer | this repo — `gitops/config/cert-manager-issuers` (app `gitops/apps/cert-manager-issuers.yaml`) |
+| Route53 record `argocd.…` → NLB | `external-dns` (`sources: [service, ingress]`) |
+| DNS-01 Route53 write access | platform Terraform — `<name>-cert-manager` EKS Pod Identity role |
+
+Fallback if the Ingress isn't up yet:
+`kubectl -n argocd port-forward svc/argocd-server 8080:443`.
+
+## Generated values (the GitOps contract)
+
+Some values aren't hand-authored — they're identifiers Terraform owns (bucket
+names, the AMP `remote_write` URL, the inference edge). Terraform publishes them
+as a non-secret **contract** (an SSM parameter,
+`/kinetics-pipeline/<env>/gitops-contract`); a render-and-PR workflow runs
+`scripts/render-generated-values.py`, which substitutes `${key}` placeholders in
+`gitops/environments/_generated/<app>.tpl.yaml` into
+`gitops/environments/<env>/values/generated/<app>.yaml`. Those files are
+**committed and reviewed** (ArgoCD only ever reads git) and layered OVER the
+hand-authored `values/<app>.yaml` by the ApplicationSet, so a machine identifier
+can never drift from what Terraform created. Secrets never enter the contract —
+they reach the cluster via External Secrets → Secrets Manager.
+
+- **Thanos** uses this: its S3 bucket (`${thanos_bucket}`) lands in
+  `generated/thanos.yaml`. Add a key by editing the terraform contract
+  (`terraform/infra/gitops-contract.tf`) and the matching `_generated/*.tpl.yaml`.
 
 ## Training-job knobs (this repo)
 

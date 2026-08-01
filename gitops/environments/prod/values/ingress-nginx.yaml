@@ -1,0 +1,24 @@
+---
+# ingress-nginx — PROD. INTERNAL NLB (provisioned by the AWS Load Balancer
+# Controller), so the ArgoCD UI is only reachable over the Client VPN. The NLB
+# annotations require the LB controller (already installed).
+controller:
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+  # external-dns reads the Ingress status (published NLB hostname) to create the
+  # argocd A-record — keep publishService on (chart default, set explicit here).
+  publishService:
+    enabled: true
+  ingressClassResource:
+    name: nginx
+    enabled: true
+    default: false
+  # Admin edge — a single replica is fine; bump if it fronts more later.
+  replicaCount: 1
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 512Mi }

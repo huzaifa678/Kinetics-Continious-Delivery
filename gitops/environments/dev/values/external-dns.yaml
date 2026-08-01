@@ -2,6 +2,9 @@
 # external-dns — dev cluster. Pod-Identity SA (external-dns/kube-system).
 provider:
   name: aws
+sources:
+  - service
+  - ingress
 policy: upsert-only
 registry: txt
 txtOwnerId: kinetics-pipeline-dev

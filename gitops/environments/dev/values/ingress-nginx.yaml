@@ -1,0 +1,18 @@
+---
+# ingress-nginx — DEV. Same internal-NLB posture as prod. No ArgoCD Ingress is
+# wired in dev by default (argocd_hostname is prod-only in terraform), so this
+# controller is idle until a dev Ingress with ingressClassName: nginx is added.
+controller:
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+  publishService:
+    enabled: true
+  ingressClassResource:
+    name: nginx
+    enabled: true
+    default: false
+  replicaCount: 1

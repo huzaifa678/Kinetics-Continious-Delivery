@@ -1,0 +1,14 @@
+---
+email: huzaifagill411@gmail.com
+
+region: us-east-1
+
+hostedZoneID: ""
+
+issuers:
+  prod:
+    name: letsencrypt-dns
+    server: https://acme-v02.api.letsencrypt.org/directory
+  staging:
+    name: letsencrypt-staging
+    server: https://acme-staging-v02.api.letsencrypt.org/directory

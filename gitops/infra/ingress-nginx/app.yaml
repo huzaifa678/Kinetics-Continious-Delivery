@@ -1,0 +1,12 @@
+---
+# Catalog entry (ApplicationSet input data — NOT a k8s manifest).
+# ingress-nginx — INTERNAL NLB ingress controller. Currently fronts the ArgoCD
+# UI (argocd.freeeasycrypto.com, VPN-only): nginx terminates TLS with the cert
+# minted by the cert-manager `letsencrypt-dns` ClusterIssuer
+# (gitops/apps/cert-manager-issuers). The IngressClass is `nginx` (non-default).
+# Env values: environments/<env>/values/ingress-nginx.yaml
+name: ingress-nginx
+namespace: ingress-nginx
+chartRepoURL: https://kubernetes.github.io/ingress-nginx
+chartName: ingress-nginx
+chartVersion: "4.11.3"
