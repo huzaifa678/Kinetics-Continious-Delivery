@@ -36,9 +36,12 @@ resources:
 nodeSelector: {}
 tolerations: []
 
-# IRSA/Pod-Identity SA that can WRITE the output S3 prefix. Fill after terraform.
 serviceAccount:
   create: true
   name: etl-shards
+  # No IRSA annotation. AWS credentials are supplied by the EKS Pod Identity Agent
+  # (DaemonSet in kube-system). Terraform creates the association:
+  #   aws_eks_pod_identity_association.etl_shards  →  role kinetics-{env}-etl-shards
+  # The agent injects credentials automatically for pods running as this SA.
+  # No eks.amazonaws.com/role-arn annotation is needed or used.
   annotations: {}
-    # eks.amazonaws.com/role-arn: arn:aws:iam::533267178572:role/kinetics-etl-shards

@@ -1,5 +1,8 @@
 parallelism: 8
 
+# ETL shards — prod overrides.
+# AWS auth uses EKS Pod Identity (aws_eks_pod_identity_association.etl_shards in
+# Terraform). No IRSA annotation needed on the ServiceAccount.
 serviceAccount:
   create: true
   name: etl-shards
