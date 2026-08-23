@@ -349,6 +349,76 @@ package manifests
 }
 
 
+// ── Standard workload / RBAC / networking kinds ─────────────────────────────
+// Emitted by the in-repo Backstage portal chart (gitops/config/backstage).
+// Kept structurally permissive (open specs) — CUE here guards shape/typos, not
+// full k8s API validation (kubeconform/the cluster do that).
+
+#Deployment: {
+	apiVersion: "apps/v1"
+	kind:       "Deployment"
+	metadata:   #ObjectMeta
+	spec: {
+		replicas?: int & >=0
+		selector: {matchLabels: {[string]: string}}
+		template: {...}
+		...
+	}
+}
+
+#Service: {
+	apiVersion: "v1"
+	kind:       "Service"
+	metadata:   #ObjectMeta
+	spec: {
+		type?: "ClusterIP" | "NodePort" | "LoadBalancer" | "ExternalName"
+		selector?: {[string]: string}
+		ports?: [...{port: int, ...}]
+		...
+	}
+}
+
+#Ingress: {
+	apiVersion: "networking.k8s.io/v1"
+	kind:       "Ingress"
+	metadata:   #ObjectMeta
+	spec: {
+		ingressClassName?: string
+		tls?: [...{...}]
+		rules?: [...{...}]
+		...
+	}
+}
+
+#ClusterRole: {
+	apiVersion: "rbac.authorization.k8s.io/v1"
+	kind:       "ClusterRole"
+	metadata:   #ObjectMeta
+	rules: [...{...}]
+}
+
+#ClusterRoleBinding: {
+	apiVersion: "rbac.authorization.k8s.io/v1"
+	kind:       "ClusterRoleBinding"
+	metadata:   #ObjectMeta
+	roleRef:  {...}
+	subjects: [...{...}]
+}
+
+// ExternalSecret: pulls a Secrets Manager secret into a k8s Secret via ESO.
+#ExternalSecret: {
+	apiVersion: "external-secrets.io/v1"
+	kind:       "ExternalSecret"
+	metadata:   #ObjectMeta
+	spec: {
+		refreshInterval?: string
+		secretStoreRef: {name: string, kind: string}
+		target: {name: string, ...}
+		data: [...{secretKey: string, remoteRef: {key: string, property?: string, ...}}]
+		...
+	}
+}
+
 #Resource: #HyperPodPyTorchJob |
 	#PersistentVolume |
 	#PersistentVolumeClaim |
@@ -362,4 +432,10 @@ package manifests
 	#SeldonModel |
 	#SeldonExperiment |
 	#WorkflowTemplate |
-	#Workflow
+	#Workflow |
+	#Deployment |
+	#Service |
+	#Ingress |
+	#ClusterRole |
+	#ClusterRoleBinding |
+	#ExternalSecret

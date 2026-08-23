@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstage
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: backstage
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backstage
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backstage
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backstage
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--config"
+            - "app-config.yaml"
+            - "--config"
+            - "app-config.production.yaml"
+          ports:
+            - name: http
+              containerPort: 7007
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            # Non-secret runtime config.
+            - name: BACKSTAGE_HOST
+              value: {{ .Values.host | quote }}
+            - name: ARGOCD_URL
+              value: {{ .Values.argocdUrl | quote }}
+            # Postgres (RDS) — from the ESO-synced backstage-db Secret.
+            - name: POSTGRES_HOST
+              valueFrom: {secretKeyRef: {name: backstage-db, key: host}}
+            - name: POSTGRES_PORT
+              valueFrom: {secretKeyRef: {name: backstage-db, key: port}}
+            - name: POSTGRES_USER
+              valueFrom: {secretKeyRef: {name: backstage-db, key: username}}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: backstage-db, key: password}}
+            - name: POSTGRES_DB
+              valueFrom: {secretKeyRef: {name: backstage-db, key: database}}
+            # Cognito OIDC + integration tokens — from backstage-secrets.
+            - name: COGNITO_METADATA_URL
+              valueFrom: {secretKeyRef: {name: backstage-secrets, key: metadataUrl}}
+            - name: COGNITO_CLIENT_ID
+              valueFrom: {secretKeyRef: {name: backstage-secrets, key: clientId}}
+            - name: COGNITO_CLIENT_SECRET
+              valueFrom: {secretKeyRef: {name: backstage-secrets, key: clientSecret}}
+            - name: GITHUB_TOKEN
+              valueFrom: {secretKeyRef: {name: backstage-secrets, key: githubToken}}
+            - name: ARGOCD_AUTH_TOKEN
+              valueFrom: {secretKeyRef: {name: backstage-secrets, key: argocdToken}}
+            - name: BACKEND_SECRET
+              valueFrom: {secretKeyRef: {name: backstage-secrets, key: backendSecret}}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /.backstage/health/v1/readiness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /.backstage/health/v1/liveness
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 15
