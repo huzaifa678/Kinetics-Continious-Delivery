@@ -17,7 +17,53 @@ prometheus:
           maxSamplesPerSend: 1000
           maxShards: 200
 
+# NOTE: Amazon Managed Grafana (enable_managed_grafana=true) exists as the
+# managed/SSO option; this self-hosted Grafana is the VPN-reachable dashboard for
+# the in-cluster Prometheus + Thanos + Tempo. Set enable_managed_grafana=false in
+# terraform if you'd rather drop AMG and run this alone.
 grafana:
-  # PROD uses Amazon Managed Grafana (enable_managed_grafana=true), so the
-  # in-cluster Grafana is OFF. AMP + X-Ray are wired as AMG datasources instead.
-  enabled: false
+  enabled: true
+  defaultDashboardsEnabled: true
+
+  # Correct absolute links/redirects behind the nginx ingress.
+  grafana.ini:
+    server:
+      root_url: https://grafana.freeeasycrypto.com
+      serve_from_sub_path: false
+
+  # Internal ingress-nginx + cert-manager TLS — identical to the ArgoCD UI.
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-dns
+    hosts:
+      - grafana.freeeasycrypto.com
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.freeeasycrypto.com
+
+  # Datasources mirror dev: Thanos (durable, S3-backed, the default so dashboards
+  # read long-term history) + Tempo (traces). The in-cluster Prometheus datasource
+  # is auto-provisioned by the chart.
+  additionalDataSources:
+    - name: Thanos
+      type: prometheus
+      uid: thanos
+      access: proxy
+      isDefault: true
+      url: http://thanos-query.thanos.svc.cluster.local:9090
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      access: proxy
+      url: http://tempo.observability:3200
+
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+  # NOTE: admin login uses the chart default (admin / prom-operator). It's
+  # VPN-only, but rotate it via `grafana.admin.existingSecret` (ESO-synced) before
+  # wider use.
