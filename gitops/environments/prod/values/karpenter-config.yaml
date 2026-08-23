@@ -1,8 +1,0 @@
----
-# Karpenter NodePool/EC2NodeClass values for the PROD cluster. The EC2NodeClass
-# discovers subnets + security groups by `karpenter.sh/discovery=<discoveryTag>`;
-# Terraform tags the prod VPC/SGs from var.name = kinetics-pipeline-prod. nodeRole
-# is the Terraform-created node role (<name>-karpenter-node).
-discoveryTag: kinetics-pipeline-prod
-nodeRole: kinetics-pipeline-prod-karpenter-node
-project: kinetics-pipeline

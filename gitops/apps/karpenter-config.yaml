@@ -1,63 +1,35 @@
 ---
 # Karpenter cluster config (NodePool + EC2NodeClass), from the in-repo chart so
-# nodeRole / discovery tag come from env overlays, not hardcoded in the CRs.
-#
-# ApplicationSet (single clusters generator), NOT a plain Application: the
-# EC2NodeClass discovers subnets/SGs by `karpenter.sh/discovery=<discoveryTag>`,
-# which is `<project>-<env>` (Terraform tags the VPC from var.name). A standalone
-# Application can't know the env, so it fell back to the chart's DEV default and
-# found zero subnets on the prod VPC -> "failed listing instance types for
-# default". The clusters generator supplies the env from the cluster Secret's
-# `environment` label (same mechanism as the infra ApplicationSet), so the chart
-# reads gitops/environments/<env>/values/karpenter-config.yaml and self-selects
-# dev vs prod off `main` with no hardcoding.
+# nodeRole / discovery tag come from chart values (gitops/config/karpenter/values.yaml),
+# not hardcoded in the CRs. Standalone (not in the ApplicationSet) because it's an
+# in-repo path with sync-wave ordering after the controller's CRDs.
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
   name: karpenter-config
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
-  goTemplate: true
-  generators:
-    - clusters:
-        selector:
-          matchLabels:
-            argocd.argoproj.io/secret-type: cluster
-  template:
-    metadata:
-      name: karpenter-config
-      namespace: argocd
-      annotations:
-        # After the controller's CRDs (its ApplicationSet is unwaved / wave 0).
-        argocd.argoproj.io/sync-wave: "1"
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
-    spec:
-      project: default
-      sources:
-        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
-          targetRevision: main
-          path: gitops/config/karpenter
-          helm:
-            # Fall back to chart defaults if an env has no overlay (e.g. test).
-            ignoreMissingValueFiles: true
-            valueFiles:
-              - '$values/gitops/environments/{{ .metadata.labels.environment }}/values/karpenter-config.yaml'
-        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
-          targetRevision: main
-          ref: values
-      destination:
-        server: '{{ .server }}'
-        namespace: karpenter
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - SkipDryRunOnMissingResource=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 15s
-            maxDuration: 3m
-            factor: 2
+  project: default
+  source:
+    repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+    targetRevision: main
+    path: gitops/config/karpenter
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: karpenter
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        maxDuration: 3m
+        factor: 2

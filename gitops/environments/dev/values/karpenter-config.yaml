@@ -1,6 +1,0 @@
----
-# Karpenter NodePool/EC2NodeClass values for the DEV cluster. Discovery tag +
-# node role track the dev VPC tags (var.name = kinetics-pipeline-dev).
-discoveryTag: kinetics-pipeline-dev
-nodeRole: kinetics-pipeline-dev-karpenter-node
-project: kinetics-pipeline
