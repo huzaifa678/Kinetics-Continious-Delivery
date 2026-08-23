@@ -36,6 +36,23 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
+  # Aggregated ClusterRoles ship with empty `rules: []`; the k8s aggregation
+  # controller populates `.rules` at runtime from their -edit/-view members. So
+  # ArgoCD forever sees desired [] vs live [<aggregated>] -> the app is stuck
+  # OutOfSync (Healthy) and never reports Synced, which trips the Terraform
+  # hyperpod_deps_check gate that blocks HyperPod CREATE. Ignore `.rules` on just
+  # the two aggregator roles (their -edit/-view siblings sync normally).
+  ignoreDifferences:
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: kubeflow-training-admin
+      jsonPointers:
+        - /rules
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: hyperpod-dependencies-mpi-operator-kubeflow-mpijobs-admin
+      jsonPointers:
+        - /rules
   syncPolicy:
     automated:
       prune: true
@@ -44,6 +61,8 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+      # Don't let selfHeal re-apply empty rules over the aggregation controller.
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
