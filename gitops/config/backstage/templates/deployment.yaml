@@ -78,9 +78,6 @@ spec:
             # reuse backendSecret as the session cookie signing key.
             - name: APP_CONFIG_auth_session_secret
               valueFrom: {secretKeyRef: {name: backstage-secrets, key: backendSecret}}
-            - name: APP_CONFIG_catalog_locations
-              value: |
-                [{"type":"file","target":"./catalog/all.yaml","rules":[{"allow":["Component","System","API","Resource","Location","Group","User","Domain"]}]},{"type":"file","target":"./catalog/templates/register-existing/template.yaml","rules":[{"allow":["Template"]}]},{"type":"file","target":"./catalog/templates/training-job/template.yaml","rules":[{"allow":["Template"]}]}]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           readinessProbe:
