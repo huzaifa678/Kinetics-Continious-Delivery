@@ -51,6 +51,10 @@ echo "==> Rendering in-repo Seldon experiment chart (Server + Models + Experimen
 helm template seldon-experiment "$ROOT/gitops/config/seldon-experiment" > "$TMP/render-seldon-experiment.yaml"
 vet "$TMP/render-seldon-experiment.yaml"
 
+echo "==> Rendering in-repo Backstage portal chart (Deployment + Ingress + RBAC + ESO)"
+helm template backstage "$ROOT/gitops/config/backstage" --namespace backstage > "$TMP/render-backstage.yaml"
+vet "$TMP/render-backstage.yaml"
+
 echo "==> Linting in-repo inference-service chart"
 helm lint "$ROOT/helm/inference-service"
 helm lint "$ROOT/helm/inference-service" --set seldon.enabled=false
