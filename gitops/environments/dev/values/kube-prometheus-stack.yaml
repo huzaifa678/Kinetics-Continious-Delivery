@@ -19,6 +19,12 @@ prometheus:
 grafana:
   enabled: true
   defaultDashboardsEnabled: true
+  # The chart auto-provisions the in-cluster Prometheus datasource as default;
+  # Thanos below is also default -> Grafana aborts ("Only one datasource ...
+  # default"). Demote the auto Prometheus so Thanos is the sole default.
+  sidecar:
+    datasources:
+      isDefaultDatasource: false
   additionalDataSources:
     - name: Tempo
       type: tempo

@@ -44,9 +44,13 @@ grafana:
         hosts:
           - grafana.freeeasycrypto.com
 
+  sidecar:
+    datasources:
+      isDefaultDatasource: false
+
   # Datasources mirror dev: Thanos (durable, S3-backed, the default so dashboards
   # read long-term history) + Tempo (traces). The in-cluster Prometheus datasource
-  # is auto-provisioned by the chart.
+  # is auto-provisioned by the chart (non-default, per the sidecar setting above).
   additionalDataSources:
     - name: Thanos
       type: prometheus
