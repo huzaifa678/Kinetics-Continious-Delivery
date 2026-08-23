@@ -18,7 +18,7 @@
 prometheus:
   prometheusSpec:
     remoteWrite:
-      - url: "https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-28629c1c-d45f-4939-b51b-21fa65d1f423/api/v1/remote_write"
+      - url: "https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-04848e42-d3b3-4c95-9880-25394622a757/api/v1/remote_write"
         sigv4:
           region: "us-east-1"
       # MIGRATION: second target = in-cluster Thanos Receive (durable long-term

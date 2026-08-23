@@ -1,0 +1,14 @@
+# =============================================================================
+# GENERATED FILE -- DO NOT EDIT.
+#
+# Rendered from the GitOps contract published by terraform/infra/gitops-contract.tf
+# (SSM parameter /kinetics-pipeline/prod/gitops-contract) by
+# scripts/render-generated-values.py.
+#
+# Hand edits are overwritten by the next render-and-PR run. Change the template
+# at gitops/environments/_generated/etl-shards.tpl.yaml instead, or change the Terraform output that feeds it.
+#
+# Environment: prod
+# =============================================================================
+---
+outputS3: s3://kinetics-pipeline-prod-data-533267178572/kinetics400/shards/train
