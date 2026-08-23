@@ -2,23 +2,17 @@
 image:
   # Set by CI (update-gitops.yml) to the shared ECR repo. Placeholder until the
   # first prod docker-build dispatch writes the real repo/tag.
-  repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-pipeline
-  tag: backstage-v1
+  repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
+  tag: backstage-dafb8a2
   pullPolicy: IfNotPresent
-
 replicaCount: 1
-
 host: backstage.freeeasycrypto.com
-
 # ArgoCD instance the Argo CD plugin queries. In-cluster over the VPN host.
 argocdUrl: https://argocd.freeeasycrypto.com
-
 serviceAccount:
   name: backstage
-
 service:
   port: 7007
-
 # Internal ingress-nginx + cert-manager (letsencrypt-dns ClusterIssuer), exactly
 # like the ArgoCD UI: nginx terminates TLS, external-dns registers the host to
 # the internal NLB → reachable only over the Client VPN.
@@ -26,7 +20,6 @@ ingress:
   enabled: true
   className: nginx
   clusterIssuer: letsencrypt-dns
-
 resources:
   requests:
     cpu: 250m
@@ -34,7 +27,6 @@ resources:
   limits:
     cpu: "1"
     memory: 1Gi
-
 # External Secrets Operator wiring. The ClusterSecretStore `aws-secrets` already
 # exists (gitops/config/external-secrets). These pull from Secrets Manager:
 #   db     -> kinetics-backstage-db-<env>   (terraform: modules/rds)
