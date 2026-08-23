@@ -7,4 +7,4 @@ name: thanos
 namespace: thanos
 chartRepoURL: https://charts.bitnami.com/bitnami
 chartName: thanos
-chartVersion: "17.6.0"
+chartVersion: "17.3.1"
