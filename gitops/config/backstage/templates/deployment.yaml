@@ -92,3 +92,27 @@ spec:
               port: http
             initialDelaySeconds: 60
             periodSeconds: 15
+        - name: kubectl-proxy
+          image: registry.k8s.io/kubectl:v1.34.0
+          command: ["kubectl"]
+          args:
+            - proxy
+            - --port=8001
+            - --address=127.0.0.1
+            - --accept-hosts=.*
+          ports:
+            - name: kube-proxy
+              containerPort: 8001
+          securityContext:
+            allowPrivilegeEscalation: false
+            # kubectl writes a discovery cache under $HOME; leave rootfs writable.
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+          livenessProbe:
+            httpGet: { path: /api, port: kube-proxy }
+            initialDelaySeconds: 15
+            periodSeconds: 20
