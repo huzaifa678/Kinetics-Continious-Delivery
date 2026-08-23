@@ -1,7 +1,7 @@
 ---
 image:
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: serve-dafb8a2
+  tag: serve-6ac22f2
   pullPolicy: IfNotPresent
 replicaCount: 1 # only used when autoscaling.enabled = false (KEDA owns replicas otherwise)
 # KEDA autoscaling for the FastAPI inference Rollout. When enabled, a ScaledObject
