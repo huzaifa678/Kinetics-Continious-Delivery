@@ -1,0 +1,7 @@
+---
+apiVersion: v2
+name: backstage
+description: Kinetics developer portal (Backstage) - Deployment, internal ingress, RBAC and ESO-synced secrets.
+type: application
+version: 0.1.0
+appVersion: "1.32.0"
