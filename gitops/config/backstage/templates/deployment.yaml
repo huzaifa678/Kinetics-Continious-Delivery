@@ -75,6 +75,9 @@ spec:
               valueFrom: {secretKeyRef: {name: backstage-secrets, key: argocdToken}}
             - name: BACKEND_SECRET
               valueFrom: {secretKeyRef: {name: backstage-secrets, key: backendSecret}}
+            # reuse backendSecret as the session cookie signing key.
+            - name: APP_CONFIG_auth_session_secret
+              valueFrom: {secretKeyRef: {name: backstage-secrets, key: backendSecret}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           readinessProbe:
