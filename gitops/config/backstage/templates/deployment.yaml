@@ -19,6 +19,12 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       securityContext:
         runAsNonRoot: true
+        # The image's USER is the name `node` (node:20-slim), which kubelet can't
+        # verify as non-root under runAsNonRoot -> "image has non-numeric user".
+        # Pin the numeric uid/gid of that `node` user (1000) so admission passes.
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
