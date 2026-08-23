@@ -3,7 +3,7 @@ image:
   # Set by CI (update-gitops.yml) to the shared ECR repo. Placeholder until the
   # first prod docker-build dispatch writes the real repo/tag.
   repository: 533267178572.dkr.ecr.us-east-1.amazonaws.com/kinetics-training
-  tag: backstage-c745cca
+  tag: backstage-e478a47
   pullPolicy: IfNotPresent
 replicaCount: 1
 host: backstage.freeeasycrypto.com
