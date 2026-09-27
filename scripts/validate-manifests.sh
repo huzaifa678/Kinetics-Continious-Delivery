@@ -55,6 +55,13 @@ echo "==> Rendering in-repo Backstage portal chart (Deployment + Ingress + RBAC 
 helm template backstage "$ROOT/gitops/config/backstage" --namespace backstage > "$TMP/render-backstage.yaml"
 vet "$TMP/render-backstage.yaml"
 
+# Local (vendored) Thanos chart — replaced Bitnami (paywall 2025). Render with a
+# stub objstoreConfig (the real one is the generated contract overlay at deploy).
+echo "==> Rendering in-repo Thanos chart (Receive + StoreGW + Compactor + Query)"
+helm template thanos "$ROOT/gitops/config/thanos" --namespace thanos \
+  --set 'objstoreConfig=type: s3' > "$TMP/render-thanos.yaml"
+vet "$TMP/render-thanos.yaml"
+
 echo "==> Linting in-repo inference-service chart"
 helm lint "$ROOT/helm/inference-service"
 helm lint "$ROOT/helm/inference-service" --set seldon.enabled=false
@@ -64,6 +71,10 @@ helm lint "$ROOT/helm/inference-service" --set seldon.enabled=false
 echo "==> Rendering + vetting in-repo etl-shards chart"
 helm template etl-shards "$ROOT/helm/etl-shards" > "$TMP/render-etl-shards.yaml"
 vet "$TMP/render-etl-shards.yaml"
+
+echo "==> Rendering + vetting in-repo storage (default gp3 StorageClass) chart"
+helm template storage "$ROOT/gitops/config/storage" > "$TMP/render-storage.yaml"
+vet "$TMP/render-storage.yaml"
 
 echo "==> Vetting bootstrap ApplicationSet + standalone Applications"
 for f in "$ROOT"/gitops/bootstrap/*.yaml "$ROOT"/gitops/apps/*.yaml; do
