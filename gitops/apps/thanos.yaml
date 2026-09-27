@@ -1,0 +1,49 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: thanos
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            argocd.argoproj.io/secret-type: cluster
+  template:
+    metadata:
+      name: thanos
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      sources:
+        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+          targetRevision: main
+          path: gitops/config/thanos
+          helm:
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - '$values/gitops/environments/{{ .metadata.labels.environment }}/values/thanos.yaml'
+              - '$values/gitops/environments/{{ .metadata.labels.environment }}/values/generated/thanos.yaml'
+        - repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: '{{ .server }}'
+        namespace: thanos
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - SkipDryRunOnMissingResource=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 15s
+            maxDuration: 3m
+            factor: 2

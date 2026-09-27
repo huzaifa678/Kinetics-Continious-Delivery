@@ -1,0 +1,13 @@
+apiVersion: v2
+name: thanos
+description: >-
+  Local (vendored) Thanos chart using the official quay.io/thanos/thanos image.
+  Replaces the Bitnami chart after Bitnami paywalled its charts+images (2025).
+  Topology: Receive (remote-write sink) + Store Gateway + Compactor + Query, on
+  an S3 objstore via EKS Pod Identity (ns/SA thanos). Values schema mirrors the
+  subset of Bitnami keys the env overlays already used, so the migration is
+  near drop-in.
+type: application
+version: 0.1.0
+# App version tracks the Thanos image (was Bitnami chart 17.3.1 -> app 0.39.2).
+appVersion: "0.39.2"

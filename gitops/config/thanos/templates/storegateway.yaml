@@ -1,0 +1,82 @@
+{{- if .Values.storegateway.enabled }}
+{{- $name := include "thanos.name" . }}
+---
+# Headless Service — dnssrv+_grpc._tcp.thanos-storegateway discovery by Query.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-storegateway
+  labels: {{- include "thanos.labels" . | nindent 4 }}
+    app.kubernetes.io/component: storegateway
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/component: storegateway
+  ports:
+    - {name: grpc, port: {{ .Values.ports.grpc }}, targetPort: grpc}
+    - {name: http, port: {{ .Values.ports.http }}, targetPort: http}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}-storegateway
+  labels: {{- include "thanos.labels" . | nindent 4 }}
+    app.kubernetes.io/component: storegateway
+spec:
+  replicas: {{ .Values.storegateway.replicaCount }}
+  serviceName: {{ $name }}-storegateway
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+      app.kubernetes.io/component: storegateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+        app.kubernetes.io/component: storegateway
+    spec:
+      serviceAccountName: {{ .Values.storegateway.serviceAccount.name }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: storegateway
+          image: {{ include "thanos.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - store
+            - --grpc-address=0.0.0.0:{{ .Values.ports.grpc }}
+            - --http-address=0.0.0.0:{{ .Values.ports.http }}
+            - --objstore.config-file=/etc/thanos/objstore.yaml
+            - --data-dir=/var/thanos/store
+          ports:
+            - {name: grpc, containerPort: {{ .Values.ports.grpc }}}
+            - {name: http, containerPort: {{ .Values.ports.http }}}
+          livenessProbe:
+            httpGet: {path: /-/healthy, port: http}
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet: {path: /-/ready, port: http}
+            initialDelaySeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: objstore, mountPath: /etc/thanos, readOnly: true}
+            - {name: data, mountPath: /var/thanos/store}
+      volumes:
+        - name: objstore
+          secret: {secretName: {{ $name }}-objstore}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.storegateway.persistence.size }}
+{{- end }}

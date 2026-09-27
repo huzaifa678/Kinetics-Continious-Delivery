@@ -1,0 +1,72 @@
+---
+# Defaults for standalone render/validation. Env overlays
+# (environments/<env>/values/thanos.yaml) + the generated objstoreConfig contract
+# (environments/<env>/values/generated/thanos.yaml) layer over these at deploy.
+fullnameOverride: thanos
+
+image:
+  repository: quay.io/thanos/thanos
+  tag: v0.39.2
+  pullPolicy: IfNotPresent
+
+# S3 objstore config (YAML string). Supplied by the generated contract file
+# (bucket/region from terraform); aws_sdk_auth uses the thanos SA Pod Identity.
+# Empty here so `helm template` renders standalone; real value comes from the
+# generated overlay. Rendered into the `thanos-objstore` Secret (key objstore.yaml).
+objstoreConfig: ""
+
+# Ports are the Thanos defaults; kept fixed (the query stores + Grafana datasource
+# reference them by name/number).
+ports:
+  grpc: 10901
+  http: 10902
+  remoteWrite: 19291
+  query: 9090 # thanos-query Service port (Grafana datasource points here)
+
+receive:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: true
+    name: thanos
+  tsdbRetention: 15d
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources: {}
+
+storegateway:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: false
+    name: thanos
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources: {}
+
+compactor:
+  enabled: true
+  serviceAccount:
+    create: false
+    name: thanos
+  retentionResolutionRaw: 30d
+  retentionResolution5m: 90d
+  retentionResolution1h: 1y
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources: {}
+
+query:
+  enabled: true
+  replicaCount: 1
+  serviceAccount:
+    create: true
+    name: thanos-query
+  # Explicit gRPC store endpoints (Receive + Store aren't Prometheus sidecars).
+  stores:
+    - dnssrv+_grpc._tcp.thanos-receive.thanos.svc.cluster.local
+    - dnssrv+_grpc._tcp.thanos-storegateway.thanos.svc.cluster.local
+  resources: {}

@@ -1,0 +1,82 @@
+{{- if .Values.compactor.enabled }}
+{{- $name := include "thanos.name" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-compactor
+  labels: {{- include "thanos.labels" . | nindent 4 }}
+    app.kubernetes.io/component: compactor
+spec:
+  selector:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/component: compactor
+  ports:
+    - {name: http, port: {{ .Values.ports.http }}, targetPort: http}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}-compactor
+  labels: {{- include "thanos.labels" . | nindent 4 }}
+    app.kubernetes.io/component: compactor
+spec:
+  # Compactor MUST be a singleton (concurrent compaction corrupts blocks).
+  replicas: 1
+  serviceName: {{ $name }}-compactor
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+      app.kubernetes.io/component: compactor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+        app.kubernetes.io/component: compactor
+    spec:
+      serviceAccountName: {{ .Values.compactor.serviceAccount.name }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: compactor
+          image: {{ include "thanos.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - compact
+            - --wait
+            - --http-address=0.0.0.0:{{ .Values.ports.http }}
+            - --objstore.config-file=/etc/thanos/objstore.yaml
+            - --data-dir=/var/thanos/compact
+            - --retention.resolution-raw={{ .Values.compactor.retentionResolutionRaw }}
+            - --retention.resolution-5m={{ .Values.compactor.retentionResolution5m }}
+            - --retention.resolution-1h={{ .Values.compactor.retentionResolution1h }}
+          ports:
+            - {name: http, containerPort: {{ .Values.ports.http }}}
+          livenessProbe:
+            httpGet: {path: /-/healthy, port: http}
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet: {path: /-/ready, port: http}
+            initialDelaySeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: objstore, mountPath: /etc/thanos, readOnly: true}
+            - {name: data, mountPath: /var/thanos/compact}
+      volumes:
+        - name: objstore
+          secret: {secretName: {{ $name }}-objstore}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.compactor.persistence.size }}
+{{- end }}
