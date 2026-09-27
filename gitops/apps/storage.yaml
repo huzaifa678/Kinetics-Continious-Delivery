@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: storage
+  namespace: argocd
+  annotations:
+    # Very early wave: the default StorageClass must exist before any workload
+    # (Seldon scheduler, MLServer, etc.) creates a PVC, or those PVCs hang
+    # Pending with "no storage class is set".
+    argocd.argoproj.io/sync-wave: "-5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/huzaifa678/Kinetics-Continious-Delivery.git
+    targetRevision: main
+    path: gitops/config/storage
+  destination:
+    server: https://kubernetes.default.svc
+    # StorageClass is cluster-scoped; the namespace is ignored but required.
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        maxDuration: 3m
+        factor: 2

@@ -1,0 +1,13 @@
+---
+# Default StorageClass backed by the EBS CSI driver (installed as an EKS addon).
+storageClass:
+  name: gp3
+  # Marks this the cluster default so PVCs with no storageClassName bind here.
+  # Only ONE default may exist; the legacy in-tree `gp2` is not default.
+  isDefault: true
+  type: gp3
+  encrypted: true
+  # WaitForFirstConsumer: bind in the pod's AZ (avoids cross-AZ attach failures).
+  volumeBindingMode: WaitForFirstConsumer
+  allowVolumeExpansion: true
+  reclaimPolicy: Delete

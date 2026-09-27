@@ -1,0 +1,11 @@
+---
+apiVersion: v2
+name: storage
+description: >-
+  Cluster default StorageClass (gp3, EBS CSI). Kubernetes 1.31+ removed the
+  in-tree kubernetes.io/aws-ebs provisioner, so the legacy `gp2` StorageClass
+  can no longer provision volumes and nothing was marked default — every PVC
+  (Seldon scheduler state, MLServer models, etc.) hung Pending. This provides a
+  working, encrypted, default gp3 class backed by the ebs.csi.aws.com driver.
+type: application
+version: 0.1.0
