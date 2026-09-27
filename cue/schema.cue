@@ -378,6 +378,30 @@ package manifests
 	}
 }
 
+#StatefulSet: {
+	apiVersion: "apps/v1"
+	kind:       "StatefulSet"
+	metadata:   #ObjectMeta
+	spec: {
+		replicas?:    int & >=0
+		serviceName?: string
+		selector: {matchLabels: {[string]: string}}
+		template: {...}
+		volumeClaimTemplates?: [...{...}]
+		...
+	}
+}
+
+#Secret: {
+	apiVersion: "v1"
+	kind:       "Secret"
+	metadata:   #ObjectMeta
+	type?: string
+	data?: {[string]: string}
+	stringData?: {[string]: string}
+	...
+}
+
 #Ingress: {
 	apiVersion: "networking.k8s.io/v1"
 	kind:       "Ingress"
@@ -419,7 +443,22 @@ package manifests
 	}
 }
 
+// StorageClass: cluster default, EBS CSI (ebs.csi.aws.com). Top-level fields
+// (provisioner/parameters/…), NOT under spec.
+#StorageClass: {
+	apiVersion: "storage.k8s.io/v1"
+	kind:       "StorageClass"
+	metadata:   #ObjectMeta
+	provisioner: string
+	parameters?: {...}
+	volumeBindingMode?:    string
+	allowVolumeExpansion?: bool
+	reclaimPolicy?:        string
+	...
+}
+
 #Resource: #HyperPodPyTorchJob |
+	#StorageClass |
 	#PersistentVolume |
 	#PersistentVolumeClaim |
 	#ServiceAccount |
@@ -434,6 +473,8 @@ package manifests
 	#WorkflowTemplate |
 	#Workflow |
 	#Deployment |
+	#StatefulSet |
+	#Secret |
 	#Service |
 	#Ingress |
 	#ClusterRole |
