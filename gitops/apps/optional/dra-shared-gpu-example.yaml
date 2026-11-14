@@ -1,0 +1,82 @@
+---
+# ============================================================================
+# OPTION B extra — SHARED (time-sliced) GPU example. DORMANT / reference only.
+# ============================================================================
+# This is NOT applied by anything: gitops/apps/optional/ is not scanned by the
+# app-of-apps (non-recursive directory source). It's a worked example of DRA GPU
+# *sharing* to copy into a consumer chart when you adopt Option B.
+#
+# WHY TIME-SLICING (and not MIG): the g5.12xlarge GPUs are A10G, which have NO
+# MIG support — so hard-partitioned slices are impossible. Time-slicing (the GPU
+# round-robins between pods) is the only way to pack multiple pods onto one A10G.
+# There is NO memory isolation under time-slicing: all co-tenants share the card's
+# 24 GB, so size them so their COMBINED VRAM fits 24 GB or one will OOM another.
+#
+# WHERE IT HELPS: GPU-served inference (the Seldon CNN-LSTM is small) and evals /
+# dev — pack several onto one A10G instead of burning a whole card each. It does
+# NOT help the DDP training job: ranks must each own a whole GPU (1:1), so the
+# training claim stays ExactCount/whole-GPU (helm/training-job gpu-resourceclaimtemplate.yaml).
+#
+# NAMESPACE: a ResourceClaim must live in the SAME namespace as the pods that
+# reference it. Put this in the consumer's namespace (e.g. seldon-mesh for the
+# inference workloads), NOT the training namespace.
+#
+# VERIFY BEFORE USE: the opaque device-config schema (apiVersion/kind under
+# parameters, and the sharing block) is NVIDIA-DRA-driver-version specific. Check
+# it against the installed driver:
+#   kubectl explain resourceclaimtemplate.spec.spec.devices.config
+#   (and the driver's GpuConfig/sharing CRD docs for the pinned chart version)
+# resource.k8s.io/v1 is served on EKS 1.34; use v1beta1 on 1.32/1.33.
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: shared-gpu-timesliced
+  # namespace: seldon-mesh   # set to the CONSUMER workload's namespace
+  labels:
+    app.kubernetes.io/part-of: kinetics
+    gpu.kinetics/profile: shared-timesliced
+spec:
+  spec:
+    devices:
+      requests:
+        - name: shared-gpu
+          exactly:
+            deviceClassName: gpu.nvidia.com
+            allocationMode: ExactCount
+            # One physical GPU; multiple pods referencing this template get
+            # TIME-SLICES of it (not one card each).
+            count: 1
+      # Opaque config passed to the NVIDIA DRA driver — enables time-slicing on
+      # the requested device. Schema is driver-version specific (see header).
+      config:
+        - requests: ["shared-gpu"]
+          opaque:
+            driver: gpu.nvidia.com
+            parameters:
+              apiVersion: resource.nvidia.com/v1beta1
+              kind: GpuConfig
+              sharing:
+                strategy: TimeSlicing
+                # interval: Default | Short | Medium | Long  (context-switch cadence)
+                timeSlicingConfig:
+                  interval: Default
+---
+# ---------------------------------------------------------------------------
+# Consumer snippet (COMMENTED — copy into the inference/eval pod spec). Running
+# several replicas all referencing shared-gpu-timesliced packs them onto the
+# SAME A10G via time-slices. Keep sum(per-pod VRAM) <= 24 GB.
+# ---------------------------------------------------------------------------
+# apiVersion: apps/v1
+# kind: Deployment
+# spec:
+#   replicas: 4                       # 4 small inference pods -> 1 A10G
+#   template:
+#     spec:
+#       resourceClaims:
+#         - name: gpu
+#           resourceClaimTemplateName: shared-gpu-timesliced
+#       containers:
+#         - name: server
+#           resources:
+#             claims:
+#               - name: gpu           # NO nvidia.com/gpu limit under DRA

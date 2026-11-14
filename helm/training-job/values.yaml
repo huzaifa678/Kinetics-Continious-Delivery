@@ -12,9 +12,6 @@ image:
 distributed:
   nodes: 2 # number of GPU nodes (g5.12xlarge) -> 2-node multi-node DDP
   gpusPerNode: 4 # GPUs per node (g5.12xlarge = 4x A10G) -> WORLD_SIZE = 8
-# Run on the HyperPod GPU nodes only.
-nodeSelector:
-  node.kubernetes.io/instance-type: ml.g5.12xlarge
 tolerations:
   - key: "sagemaker.amazonaws.com/node-health-status"
     operator: "Exists"
@@ -25,8 +22,43 @@ tolerations:
   - key: "nvidia.com/gpu"
     operator: "Exists"
     effect: "NoSchedule"
-# GPU limit is derived from distributed.gpusPerNode (see the template) so it can't
-# drift; set CPU/memory requests here.
+# GPU allocation mechanism. The two options are MUTUALLY EXCLUSIVE — the NVIDIA
+# device plugin and the NVIDIA DRA driver must never manage the same GPUs on a
+# node (each allocates independently with no shared accounting, so the same
+# physical GPU gets handed to two pods — oversubscription with NO error). Pick
+# ONE and keep the cluster add-ons in step with it:
+#   devicePlugin (Option A, default) — classic `nvidia.com/gpu` resource served
+#     by the NVIDIA device plugin (enabled in
+#     gitops/apps/hyperpod-dependencies.yaml: nvidia-device-plugin.devicePlugin).
+#   dra (Option B) — Dynamic Resource Allocation. Requires EKS >= 1.33 (cluster
+#     targets 1.34), the NVIDIA DRA driver installed
+#     (gitops/apps/optional/nvidia-dra-driver.yaml), AND the device plugin set to
+#     "false" in hyperpod-dependencies.yaml. See that app's header for the full
+#     A -> B flip. NOTE: HyperPod health-monitoring/deep-health-check may rely on
+#     the device plugin's nvidia.com/gpu advertisement — verify before flipping.
+# Flipping gpu.mode here only rewires THIS job; it does not install/uninstall the
+# cluster add-ons. Do both together or GPUs get double-booked.
+gpu:
+  mode: devicePlugin # devicePlugin | dra
+  # Run on the HyperPod GPU nodes only. Node targeting is per mode (consumed by
+  # the kinetics-training.gpuNodeSelector helper) so classic and DRA can diverge
+  # later; identical today (same g5 GPU nodes). The active mode's entry is used;
+  # the other is ignored — that's the structural A-xor-B separation.
+  nodeSelector:
+    devicePlugin:
+      node.kubernetes.io/instance-type: ml.g5.12xlarge
+    dra:
+      node.kubernetes.io/instance-type: ml.g5.12xlarge
+  dra:
+    # DeviceClass shipped by the NVIDIA DRA driver chart. Confirm on the live
+    # cluster with `kubectl get deviceclasses`.
+    deviceClassName: gpu.nvidia.com
+    # GPUs claimed per pod is derived from distributed.gpusPerNode (see the
+    # ResourceClaimTemplate), so a DDP rank still maps 1:1 to a GPU and the
+    # WORLD_SIZE math is unchanged vs Option A.
+# GPU limit (Option A) / claim count (Option B) is derived from
+# distributed.gpusPerNode (see the template) so it can't drift; set CPU/memory
+# requests here.
 resources:
   requests:
     cpu: "8"

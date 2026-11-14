@@ -1,3 +1,5 @@
+{{- /* Validate the GPU mode once, up front (A-xor-B lives in the helper). */ -}}
+{{- $_ := include "kinetics-training.gpuMode" . -}}
 ---
 apiVersion: sagemaker.amazonaws.com/v1
 kind: HyperPodPyTorchJob
@@ -15,14 +17,14 @@ spec:
           labels:
             {{- include "kinetics-training.selectorLabels" . | nindent 12 }}
         spec:
-          {{- with .Values.nodeSelector }}
           nodeSelector:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+            {{- include "kinetics-training.gpuNodeSelector" . | nindent 12 }}
           {{- with .Values.tolerations }}
           tolerations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- /* Option B only: pod resourceClaims (empty under Option A). */ -}}
+          {{- include "kinetics-training.gpuResourceClaims" . | nindent 10 }}
           containers:
             - name: pytorch
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -84,11 +86,7 @@ spec:
                 - name: LOG_LEVEL
                   value: "{{ .Values.observability.logLevel }}"
               resources:
-                limits:
-                  # Derived from the centralized GPU/node count — one knob, no drift.
-                  nvidia.com/gpu: {{ .Values.distributed.gpusPerNode }}
-                requests:
-                  {{- toYaml .Values.resources.requests | nindent 18 }}
+                {{- include "kinetics-training.gpuResources" . | nindent 16 }}
               volumeMounts:
                 - name: dataset
                   mountPath: {{ .Values.data.mountPath }}

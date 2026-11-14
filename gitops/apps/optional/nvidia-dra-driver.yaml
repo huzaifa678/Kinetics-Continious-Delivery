@@ -1,0 +1,108 @@
+---
+# ============================================================================
+# OPTION B — NVIDIA DRA driver for GPUs (Dynamic Resource Allocation)
+# ============================================================================
+# MUTUALLY EXCLUSIVE with Option A (the NVIDIA device plugin). The device plugin
+# and this DRA driver must NEVER manage the same GPUs on a node — each allocates
+# independently with no shared accounting, so the same physical GPU is handed to
+# two pods (oversubscription, NO error). See:
+#   https://karpenter.sh/docs/tasks/dra/  (both -> silent double-allocation)
+#
+# DORMANT BY DESIGN: this file lives under gitops/apps/optional/, which the
+# platform-standalone-apps app-of-apps (gitops/bootstrap/root-apps.yaml, a
+# non-recursive directory source over gitops/apps) does NOT scan. So committing
+# it does nothing until you deliberately turn Option B on.
+#
+# A -> B flip (do ALL of these together, then push):
+#   1. hyperpod-dependencies.yaml: set nvidia-device-plugin.devicePlugin.enabled
+#      to "false". Drain GPU nodes; confirm the device-plugin DaemonSet pods have
+#      fully terminated.
+#   2. Activate this app: move it up to gitops/apps/nvidia-dra-driver.yaml (so the
+#      app-of-apps picks it up), or add gitops/apps/optional/* to an ApplicationSet.
+#   3. helm/training-job/values.yaml: set gpu.mode: dra. (The chart's
+#      kinetics-training.gpuMode helper then drives resources, resourceClaims and
+#      the GPU nodeSelector off that one value — no per-template edits.)
+#   4. gitops/environments/<env>/values/dcgm-exporter.yaml: only if the DRA GPU
+#      node target differs from Option A, swap in the Option B selector documented
+#      there (identical today, so usually a no-op).
+#   5. Verify EKS >= 1.33 (cluster targets 1.34) and `kubectl get deviceclasses`
+#      shows gpu.nvidia.com before launching a run.
+# B -> A: reverse all five. Never run with both the device plugin enabled AND
+# this app synced.
+#
+# HyperPod caveat: health-monitoring-agent / deep-health-check / dcgm-exporter
+# may depend on the device plugin's nvidia.com/gpu advertisement. Validate
+# HyperPod fault detection still works under DRA before committing to Option B.
+#
+# NODE PROVISIONING UNDER DRA (decided): run the HyperPod GPU group PRE-SCALED /
+# FIXED (2 nodes = 2x g5.12xlarge = 8x A10G), NOT the count-0 Karpenter-on-pending
+# path. HyperPod's MANAGED Karpenter is not DRA-aware — it will not scale a GPU
+# node from zero for a pod whose GPU need is a DRA ResourceClaim (upstream DRA
+# scale-from-zero is alpha + off by default, and the managed controller exposes no
+# enableDRA knob). Our launch flow already pre-scales ("scale the GPU group up,
+# then sync kinetics-training"), so this fits: bring the 2 nodes up first, then
+# launch — the DRA driver's kubelet plugin publishes ResourceSlices as the nodes
+# join, and the kube-scheduler allocates onto the EXISTING nodes (that path works).
+# What DRA gives up here is ONLY pod-triggered scale-UP from zero:
+#     capability                     | classic | DRA on HyperPod
+#     pod-triggered scale-up from 0  |  yes    |  NO  (pre-scale instead)
+#     schedule onto existing node    |  yes    |  yes
+#     scale-DOWN / consolidation     |  yes    |  yes (no DRA-awareness needed)
+#
+# SHARING (the reason to pick DRA here): A10G has NO MIG, so the only sharing mode
+# is TIME-SLICING (no memory isolation — size co-tenants to 24 GB). It pays off
+# for GPU inference / evals (pack several onto one A10G), NOT for training (DDP
+# ranks stay 1 GPU each). Worked, dormant example: dra-shared-gpu-example.yaml.
+#
+# Chart coordinates: NGC Helm repo. The driver also publishes to
+#   oci://registry.k8s.io/dra-driver-nvidia/charts/dra-driver-nvidia-gpu
+# (project moved to kubernetes-sigs/dra-driver-nvidia-gpu). CONFIRM the current
+# chart version against the releases page before syncing.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nvidia-dra-driver
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://helm.ngc.nvidia.com/nvidia
+    chart: nvidia-dra-driver-gpu
+    targetRevision: "25.12.0" # verify: github.com/NVIDIA/k8s-dra-driver-gpu releases
+    helm:
+      values: |
+        # The device plugin owns GPUs under Option A; it must be OFF before this
+        # syncs (see the flip above). This chart ships the gpu.nvidia.com and
+        # mig.nvidia.com DeviceClasses and the kubelet plugin DaemonSet.
+        nvidiaDriverRoot: /
+        resources:
+          gpus:
+            enabled: true
+        # Let the kubelet plugin land on the HyperPod GPU nodes, which the
+        # HyperPod Karpenter NodePool taints nvidia.com/gpu=true:NoSchedule and
+        # sagemaker.amazonaws.com/node-health-status.
+        kubeletPlugin:
+          tolerations:
+            - key: nvidia.com/gpu
+              operator: Exists
+              effect: NoSchedule
+            - key: sagemaker.amazonaws.com/node-health-status
+              operator: Exists
+              effect: NoSchedule
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nvidia-dra-driver-gpu
+  syncPolicy:
+    # NOT automated: Option B is an explicit, operator-gated change. Sync by hand
+    # (or wire into an ApplicationSet) only after Option A is fully torn down.
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        maxDuration: 5m
+        factor: 2
