@@ -1,4 +1,40 @@
 ---
-# No environment-specific values for dcgm-exporter on dev.
-# This file exists because the ApplicationSet references it via $values valueFiles.
-{}
+# dcgm-exporter runs as a DaemonSet and must land on the HyperPod GPU nodes to
+# export any GPU telemetry. Those nodes are tainted by the HyperPod Karpenter
+# NodePool (nvidia.com/gpu=true:NoSchedule) and by HyperPod itself
+# (sagemaker.amazonaws.com/node-health-status:NoSchedule). The chart default is
+# tolerations: [] -> the pods never schedule on GPU nodes -> NO GPU metrics.
+# Tolerate both taints so the exporter actually runs where the GPUs are.
+# Pin to the GPU nodes only. Without this the DaemonSet also lands on CPU/system
+# nodes (it has no GPU there -> crashloop). This mirrors the training job's
+# gpu.nodeSelector exactly, so dcgm-exporter runs precisely where GPU workloads run.
+#
+# GPU MODE (Option A vs B): dcgm-exporter is an UPSTREAM chart, so unlike the
+# training-job chart (which keys its selector off a validated gpu.mode helper) it
+# has no in-chart condition — the selector below is the Option A (device plugin)
+# target. The GPU nodes are identical under DRA today, so no change is needed to
+# switch; this block only diverges if DRA ever lands GPUs on a different label or
+# instance family. If so, as part of the A -> B flip
+# (gitops/apps/optional/nvidia-dra-driver.yaml), replace the selector below with
+# the Option B target. (For an automatic, mode-driven dcgm selector you'd move the
+# mode to a cluster-scoped switch — see that app's header.)
+nodeSelector:
+  node.kubernetes.io/instance-type: ml.g5.12xlarge
+  # Option B (DRA) target — same today. Swap in during the A -> B flip if it ever
+  # differs:
+  #   node.kubernetes.io/instance-type: ml.g5.12xlarge
+tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+  - key: sagemaker.amazonaws.com/node-health-status
+    operator: Exists
+    effect: NoSchedule
+# kube-prometheus-stack (release name "kube-prometheus-stack") selects
+# ServiceMonitors by the label release=<its release name> (default
+# serviceMonitorSelectorNilUsesHelmValues: true). Without this label Prometheus
+# ignores the dcgm ServiceMonitor and scrapes nothing.
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus-stack
