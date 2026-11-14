@@ -31,6 +31,12 @@ spec:
         - {name: deep-health-check.enabled, value: "true"}
         - {name: job-auto-restart.enabled, value: "true"}
         - {name: mpi-operator.enabled, value: "true"}
+        # GPU allocation Option A (default): classic nvidia.com/gpu device plugin.
+        # MUTUALLY EXCLUSIVE with the DRA driver (Option B,
+        # gitops/apps/optional/nvidia-dra-driver.yaml) — the two cannot manage the
+        # same GPUs on a node (silent double-allocation). To switch to Option B,
+        # set this to "false" AND follow the flip in that file; also flip
+        # helm/training-job gpu.mode to "dra". Never enable both at once.
         - {name: nvidia-device-plugin.devicePlugin.enabled, value: "true"}
         - {name: cluster-role-and-bindings.enabled, value: "true"}
   destination:
